@@ -2,6 +2,7 @@
 // |------------|----------|-------------|
 // | 2026-11-18 | Arekkazu | M08 RF-107 tipo 4: ícono de sincronización siempre visible y su detalle por módulo |
 // | 2026-11-22 | Arekkazu | INC-M08-394-G031 RF-107: detalle del conflicto, acciones, cola y caché sin conexión, fecha AAAA-MM-DD HH:MM |
+// | 2026-11-23 | Arekkazu | QA-M08 CU05 H-03 RF-107: «Ver cola» en todo módulo sin conexión, aunque su cola esté vacía |
 import React, { useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { CloudCheck, CloudAlert, CloudOff, CloudCog } from 'lucide-react';
@@ -111,13 +112,14 @@ export function EstadoSincronizacion() {
                     <td>
                       {/* CA-15: la acción es un control, no una instrucción en texto. */}
                       {m.estado === 'CONFLICTO' && <Button variant="secondary" size="sm" onClick={() => irA(m.clave)}>{t('sincronizacion.resolver')}</Button>}
-                      {m.estado === 'OFFLINE' && m.pendientes > 0 && (
+                      {/* CU05 H-03 (RF-107 8.4): sin conexión, todo módulo ofrece ver su cola, aunque esté vacía. */}
+                      {m.estado === 'OFFLINE' && (
                         <Button variant="ghost" size="sm" aria-expanded={verCola === m.clave} onClick={() => setVerCola(verCola === m.clave ? null : m.clave)}>{t('sincronizacion.ver_cola')}</Button>
                       )}
                       {m.estado === 'SINCRONIZANDO' && (
                         <Button variant="ghost" size="sm" aria-expanded={verCola === m.clave} onClick={() => setVerCola(verCola === m.clave ? null : m.clave)}>{t('sincronizacion.ver_detalle')}</Button>
                       )}
-                      {(m.estado === 'SINCRONIZADO' || (m.estado === 'OFFLINE' && m.pendientes === 0)) && '—'}
+                      {m.estado === 'SINCRONIZADO' && '—'}
                     </td>
                   </tr>
                 ))}
