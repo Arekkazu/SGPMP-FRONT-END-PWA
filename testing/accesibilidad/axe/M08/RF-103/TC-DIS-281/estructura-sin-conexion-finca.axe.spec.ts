@@ -1,6 +1,7 @@
 // | Fecha      | Nombre          | Que se hizo                                                                  |
 // |------------|-----------------|------------------------------------------------------------------------------|
 // | 2026-11-20 | SaraSofGonzalez | TC-DIS-281 RF-103: estructura, estado de widgets, sin conexión y selector de finca (accesos recorridos con Tab) |
+// | 2026-11-23 | SaraSofGonzalez | TC-DIS-281 RF-103: el escaneo sin conexión va sin Lighthouse (alteraba la red) |
 /**
  * TC-DIS-281 — Verificar accesibilidad WCAG 2.1 AA de la estructura del dashboard, el estado de cada
  * widget, el modo sin conexión y el selector de finca
@@ -165,7 +166,8 @@ test.describe('TC-DIS-281 — Estructura, estado de widgets, sin conexión y sel
     const syncTexto = await sync.innerText().catch(() => '');
     const conConexion = await page.locator('main article footer', { hasText: 'Disponible con conexión' }).count();
     const totalWidgets = await page.locator('main article').count();
-    await escanear(page, TC_ID, __dirname, 'sin-conexion', testInfo, LH);
+    // Solo axe: Lighthouse cambia la emulación de red y devolvía la conexión antes de medir el anuncio de reconexión.
+    await escanear(page, TC_ID, __dirname, 'sin-conexion', testInfo, []);
     // Un ciclo sin red (frecuencia ≥ 15 s): cada widget debe quedar con su «Última actualización».
     await page.waitForTimeout(32_000);
     const tras = await leerWidgets(page);
