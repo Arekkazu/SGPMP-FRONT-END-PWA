@@ -1,3 +1,12 @@
+## [1.5.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.5.1...v1.5.2) (2026-11-23)
+
+### Bug Fixes
+
+* **rf103-mod8:** nombres de area completos en el semaforo y encabezado sin la identidad de otra finca (QA M08 CU01 H-03, H-01) ([5a51f7d](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/5a51f7d41ad2652ddb91acc73d2497e6b6a8c6f8))
+* **rf104-mod8:** filtros de lista con todos se aplican y la auditoria muestra la descripcion completa (QA M08 CU02 H-03, H-02) ([2410170](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/2410170edd323d4359d3f8fb7e094dcd4218b97a))
+* **rf106-mod8:** consultar del historial diagnostico vuelve a consultar (QA M08 ronda 3) ([4e0a3fd](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/4e0a3fd7e03e7da107860a04a6044487435d8693))
+* **rf107-mod8:** ver cola sin conexion, aviso de exito al atender y SIN_CONEXION ante errores de red (QA M08 CU05 H-03, H-04, H-05) ([b9c0387](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/b9c03876adbfca15102197367abc164cd4c46060))
+
 ## [1.5.2-rc.1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.5.1...v1.5.2-rc.1) (2026-11-23)
 
 ### Bug Fixes
