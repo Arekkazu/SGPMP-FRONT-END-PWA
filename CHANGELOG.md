@@ -1,3 +1,9 @@
+## [1.5.2-rc.3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.5.2-rc.2...v1.5.2-rc.3) (2026-11-23)
+
+### Bug Fixes
+
+* **rf106-mod8:** el historial de prediccion con eventos ya no se cae por timeStyle ([dfed329](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/dfed3290b4142f17e6587598b84b7508b04b9f3e))
+
 ## [1.5.2-rc.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.5.2-rc.1...v1.5.2-rc.2) (2026-11-23)
 
 ### Bug Fixes
