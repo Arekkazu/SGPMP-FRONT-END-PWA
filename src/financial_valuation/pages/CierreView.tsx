@@ -10,6 +10,7 @@
 // | 2026-11-18 | Arekkazu | M08 RF-107 tipo 5: la confirmación del cierre no se cierra con Escape ni con clic afuera |
 // | 2026-11-21 | Arekkazu | INC-M08-392-G027/393-G028 RF-107: cierre en curso para todo el sistema, botón que explica el bloqueo y activos a revaluar en el diálogo |
 // | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-292/294 RF-107: error del cierre con acción correctiva y «N/Total activos procesados» |
+// | 2026-11-22 | Arekkazu | INC-M08-384-G025 RF-107: el aviso del cierre usa la plantilla de la sección 8.5 |
 import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Download, Lock, XCircle } from 'lucide-react';
@@ -175,7 +176,8 @@ function PanelPeriodo({ periodo, onCerrado, onCambio }: {
     if (r) {
       // RF-107 (TC-DIS-294): el fin del proceso dice «[N]/[Total] activos procesados».
       const totalActivos = r.activos_procesados + r.activos_excluidos.length;
-      pushToast('success', t('cierre.cerrado', { periodo: nombrePeriodo(periodo) }),
+      // RF-107 8.5 (INC-M08-384-G025): plantilla fija del cierre, con los activos revaluados.
+      pushToast('success', t('cierre.cerrado_plantilla', { periodo: nombrePeriodo(periodo), count: r.activos_procesados }),
         `${t('cierre.activos_procesados', { n: r.activos_procesados, total: totalActivos })} ${t('cierre.cerrado_detalle', { count: r.comprobantes.length })}`);
       onCerrado(r.id_periodo_siguiente);
     } else {
