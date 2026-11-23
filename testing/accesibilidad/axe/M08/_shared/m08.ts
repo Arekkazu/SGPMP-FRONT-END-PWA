@@ -3,6 +3,7 @@
 // | 2026-11-17 | Laura032005 | TC-DIS-282..294 RF-105/106/107: utilidades de las pruebas de accesibilidad de M08 |
 // | 2026-11-19 | Laura032005 | TC-DIS-286..290 RF-104/105: bandeja con nivel y ocurrencias, búsqueda de activo y reportes |
 // | 2026-11-20 | SaraSofGonzalez | TC-DIS-277..285 RF-103/106: título del historial sin distinguir mayúsculas; 277–281 ya tienen spec |
+// | 2026-11-23 | SaraSofGonzalez | TC-DIS-282..285 RF-106: «Consultar» que no pide el historial se registra como defecto de la app (1.5.1-rc.1) |
 /**
  * Utilidades de los specs de accesibilidad de M08 que sí tienen pantalla:
  *   - RF-106 (282–285): el historial de Predicción (/prediccion/historial, HistorialView).
@@ -109,11 +110,23 @@ export async function consultarHistorial(page: Page, activo: string, desde: stri
   await page.locator('#hist-hasta').fill(hasta);
   const consultar = page.getByRole('button', { name: /^Consultar/ });
   if (await consultar.isDisabled()) return false;
+  const pedido = (ms: number) => page.waitForRequest((r) => /\/prediccion\/historial\/\d+/.test(new URL(r.url()).pathname), { timeout: ms }).then(() => true).catch(() => false);
+  const llega = pedido(5_000);
   await consultar.click();
+  if (!(await llega)) {
+    // Defecto funcional en 1.5.1-rc.1: el botón hace onClick={onConsultar} y la vista recibe el evento del clic como
+    // filtros, así que «Consultar» no pide el historial. Se registra como defecto de la app.
+    consultarNoResponde = true;
+    expect.soft(false, 'DEFECTO de la app: «Consultar» no pide el historial (el botón pasa el evento del clic como filtros y la consulta se descarta)').toBe(true);
+    return false;
+  }
   await expect(page.getByText('Consultando historial…')).toBeHidden({ timeout: 60_000 });
   await page.waitForTimeout(400);
   return true;
 }
+
+/** true si en esta corrida «Consultar» no pidió el historial (defecto registrado). */
+export let consultarNoResponde = false;
 
 /** Abre la pestaña "Tendencia de riesgo" y devuelve su panel. */
 export async function abrirTendencia(page: Page) {
