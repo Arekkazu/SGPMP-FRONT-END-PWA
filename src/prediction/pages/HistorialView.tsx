@@ -7,8 +7,9 @@
 // | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU04 H-01/H-03 RF-67: detalle de la inferencia y filtro con todas las patologías |
 // | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-282..285 RF-106: tabla con evento sanitario, retroalimentación y conflicto; vista, zoom, TVCO, CSV y anuncios |
 // | 2026-11-23 | Arekkazu | QA-M08 ronda 3 RF-106: «Consultar» vuelve a consultar (recibía el evento del clic como filtros) |
+// | 2026-11-23 | Arekkazu | HOTFIX-PROD RF-106: la vista abre con eventos (fecha y hora con formatearFechaHora) |
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { formatearFecha } from '../../shared/i18n/formato';
+import { formatearFecha, formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { History, ShieldCheck, Download, Clock, TrendingUp, ZoomIn, ZoomOut, Activity, Stethoscope, MessageSquare, TriangleAlert } from 'lucide-react';
 import { usePermission } from '../../shared/rbac/usePermission';
@@ -170,7 +171,7 @@ export function HistorialView() {
       const r = relaciones.get(e.id_evento);
       return {
         id: e.id_evento,
-        fecha: formatearFecha(e.fecha_evento, { dateStyle: 'medium', timeStyle: 'short' }),
+        fecha: formatearFechaHora(e.fecha_evento, { dateStyle: 'medium', timeStyle: 'short' }),
         nivel: extraerNivelRiesgo(e.payload),
         patologia: extraerPatologia(e.payload),
         confianza: extraerConfianza(e.payload),
@@ -424,7 +425,7 @@ export function HistorialView() {
             nombre_activo: activoDe(retroEvento.id_activo_biologico)?.identificador,
             // 2.4.4 (TC-DIS-285): el formulario dice a qué inferencia corresponde (fecha, nivel y enfermedad).
             resumen: t('historialview.retro_resumen', {
-              fecha: formatearFecha(retroEvento.fecha_evento, { dateStyle: 'medium', timeStyle: 'short' }),
+              fecha: formatearFechaHora(retroEvento.fecha_evento, { dateStyle: 'medium', timeStyle: 'short' }),
               nivel: NIVEL_RIESGO_LABEL[extraerNivelRiesgo(retroEvento.payload) as number] ?? t('historialview.sin_nivel'),
               enfermedad: extraerPatologia(retroEvento.payload) ?? t('historialview.sin_patologia'),
             }),

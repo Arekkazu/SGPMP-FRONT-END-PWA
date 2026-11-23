@@ -1,6 +1,7 @@
 // | Fecha      | Nombre   | Que se hizo |
 // |------------|----------|-------------|
 // | 2026-10-25 | Arekkazu | USAB-M03-M04 M3-10/T-22: tiempo relativo («hace 3 días») para listas |
+// | 2026-11-23 | Arekkazu | HOTFIX-PROD RF-106: formatearFecha/formatearHora no aceptan timeStyle/dateStyle (lanzaban TypeError) |
 /**
  * Formateo de fechas y numeros segun el idioma activo (RF-29).
  *
@@ -24,10 +25,13 @@ export const FECHA_NUMERICA: Intl.DateTimeFormatOptions = { day: '2-digit', mont
 /** Un `YYYY-MM-DD` sin hora es un día calendario, no un instante. */
 const SOLO_FECHA = /^\d{4}-\d{2}-\d{2}$/;
 
-/** `null`/`undefined`/fecha invalida devuelven un guion, no "Invalid Date". */
+/**
+ * `null`/`undefined`/fecha invalida devuelven un guion, no "Invalid Date".
+ * Sin `timeStyle`: `toLocaleDateString` lanza TypeError con esa opcion. Fecha y hora → `formatearFechaHora`.
+ */
 export function formatearFecha(
   valor: string | number | Date | null | undefined,
-  opciones: Intl.DateTimeFormatOptions = { dateStyle: 'medium' },
+  opciones: Omit<Intl.DateTimeFormatOptions, 'timeStyle'> = { dateStyle: 'medium' },
 ): string {
   if (valor === null || valor === undefined || valor === '') return '—';
   // `new Date('2026-10-07')` es la medianoche UTC: en UTC-5 se mostraba el 06/10.
@@ -49,10 +53,10 @@ export function formatearFechaHora(
   return fecha.toLocaleString(locale(), opciones);
 }
 
-/** Solo la hora. */
+/** Solo la hora. Sin `dateStyle`: `toLocaleTimeString` lanza TypeError con esa opcion. */
 export function formatearHora(
   valor: string | number | Date | null | undefined,
-  opciones: Intl.DateTimeFormatOptions = { timeStyle: 'short' },
+  opciones: Omit<Intl.DateTimeFormatOptions, 'dateStyle'> = { timeStyle: 'short' },
 ): string {
   if (valor === null || valor === undefined || valor === '') return '—';
   const fecha = valor instanceof Date ? valor : new Date(valor);

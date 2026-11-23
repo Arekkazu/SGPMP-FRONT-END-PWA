@@ -1,3 +1,15 @@
+## [1.5.2-rc.3](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.5.2-rc.2...v1.5.2-rc.3) (2026-11-23)
+
+### Bug Fixes
+
+* **rf106-mod8:** el historial de prediccion con eventos ya no se cae por timeStyle ([dfed329](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/dfed3290b4142f17e6587598b84b7508b04b9f3e))
+
+## [1.5.2-rc.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.5.2-rc.1...v1.5.2-rc.2) (2026-11-23)
+
+### Bug Fixes
+
+* **seguridad:** borrar la cache del tablero al cerrar sesion y actualizar axios ([54c4eb1](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/commit/54c4eb1a6a365692743f0a2ede7ed30bab8849c6)), closes [#797](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/797) [#796](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/issues/796)
+
 ## [1.5.2](https://github.com/Arekkazu/SGPMP-FRONT-END-PWA/compare/v1.5.1...v1.5.2) (2026-11-23)
 
 ### Bug Fixes
