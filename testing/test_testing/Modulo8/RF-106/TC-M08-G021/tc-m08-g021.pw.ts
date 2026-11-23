@@ -1,6 +1,7 @@
 // | Fecha      | Nombre                  | Que se hizo |
 // |------------|-------------------------|-------------|
 // | 2026-11-20 | Juan Sebastian Gutierrez | TC-M08-G021 (TC-M08-052 y 053; RF-106): parte Playwright (CP-10 a CP-17), datos reales del 885 en TEST |
+// | 2026-11-21 | Juan Sebastian Gutierrez | v1.1 reintento 1 (INC de G021, GitHub #722): checkpoints, esperados y fuentes literales de la ronda 1; solo cambia la forma de medir porque el arreglo cambio el DOM: eventos <rect> (ADAPT-1), texto propio del marcador "N eventos" sin su <title> (ADAPT-2) y texto de la leyenda en la precondicion de despliegue (ADAPT-3) |
 //
 // QA SGPMP - Evaluacion (ronda 1). Navegador real (Chromium) contra el frontend desplegado en TEST, cuenta Veterinario 97,
 // activo 885, con los tres escenarios de CA-7 sembrados por el DBA: d1f3cc43-2684 a 600 min, f056f99d-2685 a 30 min y
@@ -151,11 +152,15 @@ async function leerGrafica(page: Page): Promise<Grafica> {
     const nums = (d: string) => (d.match(/[+-]?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi) ?? []).map(Number);
     const sup = document.querySelector('svg.recharts-surface');
     const puntos = Array.from(document.querySelectorAll('.recharts-line-dots circle')).map((el) => ({ x: Number(el.getAttribute('cx')), y: Number(el.getAttribute('cy')) }));
-    const eventos = Array.from(document.querySelectorAll('.recharts-scatter-symbol path')).map((el) => {
+    // ADAPT-1 (reintento 1): desde a74c51cb el evento es un <rect> propio; se aceptan path (ronda 1) y rect.
+    const eventos = Array.from(document.querySelectorAll('.recharts-scatter-symbol path, .recharts-scatter-symbol rect')).map((el) => {
       let x = Number.NaN; let y = Number.NaN;
       const tr = el.getAttribute('transform') ?? el.parentElement?.getAttribute('transform') ?? '';
       const t = tr.match(/translate\(\s*([+-]?[\d.e+-]+)\s*(?:,\s*|\s+)([+-]?[\d.e+-]+)\s*\)/i);
-      if (t) { x = Number(t[1]); y = Number(t[2]); } else {
+      if (el.tagName.toLowerCase() === 'rect') {
+        x = Number(el.getAttribute('x')) + Number(el.getAttribute('width')) / 2;
+        y = Number(el.getAttribute('y')) + Number(el.getAttribute('height')) / 2;
+      } else if (t) { x = Number(t[1]); y = Number(t[2]); } else {
         const n = nums(el.getAttribute('d') ?? '');
         const xs = n.filter((_, i) => i % 2 === 0); const ys = n.filter((_, i) => i % 2 === 1);
         if (xs.length) { x = (Math.min(...xs) + Math.max(...xs)) / 2; y = (Math.min(...ys) + Math.max(...ys)) / 2; }
@@ -172,7 +177,9 @@ async function leerGrafica(page: Page): Promise<Grafica> {
       const n = nums(el.getAttribute('d') ?? '');
       return { a: { x: n[0], y: n[1] }, b: { x: n[n.length - 2], y: n[n.length - 1] } };
     }) : [];
-    const grupos = sup ? Array.from(sup.querySelectorAll('text')).map((el) => ({ el, texto: (el.textContent ?? '').replace(/\s+/g, ' ').trim() }))
+    // ADAPT-2 (reintento 1): solo el texto propio del <text>; el <title> hijo es el detalle al pasar el raton.
+    const propio = (el: Element) => Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent ?? '').join('');
+    const grupos = sup ? Array.from(sup.querySelectorAll('text')).map((el) => ({ el, texto: propio(el).replace(/\s+/g, ' ').trim() }))
       .filter((t) => /^(\d+) eventos?$/.test(t.texto)).map((t) => ({ n: Number(t.texto.split(' ')[0]), x: Number(t.el.getAttribute('x')), texto: t.texto })) : [];
     return { puntos, eventos, punteados, grupos };
   });
@@ -204,7 +211,7 @@ async function tooltipEn(page: Page, j: number, px: number, py: number): Promise
   await page.waitForTimeout(400);
   const texto = await page.evaluate((k) => {
     const n = (s: string | null | undefined) => (s ?? '').replace(/[  ]/g, ' ').replace(/\s+/g, ' ').trim();
-    const simbolo = document.querySelectorAll('.recharts-scatter-symbol path')[k]?.closest('.recharts-scatter-symbol');
+    const simbolo = document.querySelectorAll('.recharts-scatter-symbol path, .recharts-scatter-symbol rect')[k]?.closest('.recharts-scatter-symbol'); // ADAPT-1
     const tip = document.querySelector('.recharts-tooltip-wrapper') as HTMLElement | null;
     const visible = tip && getComputedStyle(tip).visibility !== 'hidden' ? n(tip.innerText) : '';
     const partes = [visible, ...Array.from(simbolo?.querySelectorAll('title') ?? []).map((t) => n(t.textContent)),
@@ -322,7 +329,7 @@ test('TC-M08-G021 parte navegador real (CP-10 a CP-17)', async ({ page }) => {
   await captura(page, 'linea_tiempo');
   const medirModo = async (g: Grafica) => {
     if (!conteoOk(g)) return { ok14: false, ok15: false, ok16: false, d14: conteo(g), d15: conteo(g), d16: conteo(g), tooltips: [] as string[] };
-    const ev = await page.evaluate(() => Array.from(document.querySelectorAll('.recharts-scatter-symbol path')).map((el) => {
+    const ev = await page.evaluate(() => Array.from(document.querySelectorAll('.recharts-scatter-symbol path, .recharts-scatter-symbol rect')).map((el) => { // ADAPT-1
       const r = el.getBoundingClientRect(); return { px: r.left + r.width / 2, py: r.top + r.height / 2 };
     }));
     const cA = conectores(g, g.puntos[iPredA], g.eventos[jA]);
@@ -393,8 +400,10 @@ test('TC-M08-G021 parte navegador real (CP-10 a CP-17)', async ({ page }) => {
   const index = [...new Set(scripts.map((s) => s.nombre).filter((n) => /^index-.*\.js$/.test(n)))];
   await page.goto('about:blank');
   observaciones.push(`Despliegue: bundle ${index.join(', ') || '(no identificado)'} en ${BASE}.`);
-  precondicion('El frontend desplegado tiene la vista del historial predictivo de #693 ("Se relacionan predicción y evento", "grupos de eventos cercanos")',
-    todo.includes('Se relacionan predicción y evento') && todo.includes('grupos de eventos cercanos'),
+  // ADAPT-3 (reintento 1): la leyenda de #693 cambio con el arreglo de #722 (a74c51cb, prediction.json:1071);
+  // se exige el texto nuevo, que ademas confirma que el arreglo esta desplegado.
+  precondicion('El frontend desplegado tiene la vista del historial predictivo con el arreglo de #722 ("Una línea punteada une la predicción con su evento sanitario", "grupos de eventos cercanos")',
+    todo.includes('Una línea punteada une la predicción con su evento sanitario') && todo.includes('grupos de eventos cercanos'),
     `bundle: ${index.join(', ') || '(sin index-*.js)'}; ${scripts.length} scripts revisados`);
 
   expect(violaciones, violaciones.join('; ')).toEqual([]);

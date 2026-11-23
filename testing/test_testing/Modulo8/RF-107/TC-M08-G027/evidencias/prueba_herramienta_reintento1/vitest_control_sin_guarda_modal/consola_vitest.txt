@@ -1,0 +1,35 @@
+
+ RUN  v4.1.11 /home/claude/g024/fe
+
+[QA_MUTACION] sin_guarda_modal[0] aplicada en /home/claude/g024/fe/src/shared/design-system/ModalShell.tsx
+[QA_MUTACION] sin_guarda_modal[1] aplicada en /home/claude/g024/fe/src/shared/design-system/ModalShell.tsx
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx (7 tests | 1 failed) 891ms
+     × CP-09, CP-10 y CP-11 cierre pendiente: tooltip en controles, navegacion libre y bloqueo de revocacion 154ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-064 Bloqueo de operaciones dependientes y navegacion (RF-107 8.2 y 8.3) > CP-09, CP-10 y CP-11 cierre pendiente: tooltip en controles, navegacion libre y bloqueo de revocacion
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx:873:84
+    871|       }
+    872|
+    873|       expect(ok09 && ok10 && CPS.find((c) => c.paso === 'CP-11')?.esta…
+       |                                                                                    ^
+    874|     } finally {
+    875|       cierreDiferido.resolver({
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  15:15:04
+   Duration  2.39s (transform 669ms, setup 69ms, import 1.03s, tests 891ms, environment 279ms)
+

@@ -1,0 +1,118 @@
+{
+  "tc": "TC-M08-G022",
+  "parte": "playwright",
+  "reintento": 1,
+  "run_id": "ph-normal",
+  "fecha": "2026-11-22T01:20:47.209Z",
+  "ambiente": "http://127.0.0.1:4173/sigab-test/",
+  "summary": {
+    "total": 4,
+    "ok": 4,
+    "falla": 0,
+    "veredicto": "Aprobado"
+  },
+  "precondiciones": [
+    {
+      "nombre": "Credenciales del Veterinario en memoria",
+      "ok": true,
+      "detalle": "QA_VET_EMAIL / QA_VET_PASSWORD presentes"
+    },
+    {
+      "nombre": "Login del Veterinario 97 (una sola vez)",
+      "ok": true,
+      "detalle": "URL tras el login: /sigab-test/dashboard"
+    },
+    {
+      "nombre": "El activo 885 figura entre los animales o lotes del Veterinario",
+      "ok": true,
+      "detalle": "1 opciones"
+    },
+    {
+      "nombre": "GET /historial-predictivo/885 (Lineal) responde 200",
+      "ok": true,
+      "detalle": "HTTP 200"
+    },
+    {
+      "nombre": "Línea base del 885: >=2 predicciones (>=1 con valoración y >=1 sin valoración), 2 <= pendientes <= 20 con >=2 niveles",
+      "ok": true,
+      "detalle": "predicciones=8, con_valoracion=2, sin_valoracion=6, pendientes=6, niveles_pendientes=[0,1,2,3], ahora=2026-11-22T01:20:44.000Z (header Date)"
+    },
+    {
+      "nombre": "Parte B: existen dos predicciones pA y pB con al menos 10 días de diferencia",
+      "ok": true,
+      "detalle": "pA=dd000001@2026-07-01T15:00:00+00:00, pB=dd000002@2026-07-15T15:00:00+00:00"
+    },
+    {
+      "nombre": "Parte B: ninguna de las 3 fechas simuladas queda a menos de 1 h de una predicción",
+      "ok": true,
+      "detalle": "fechas=[2026-07-01T21:00:00+00:00, 2026-07-15T21:00:00+00:00, 2026-07-18T03:00:00+00:00]"
+    },
+    {
+      "nombre": "Parte B: respuesta simulada servida (>=1) y 3 marcadores de retroalimentación dibujados",
+      "ok": true,
+      "detalle": "simuladas=1; marcadores_retro=3; clase_0=RETROALIMENTACION"
+    },
+    {
+      "nombre": "El frontend desplegado contiene \"Predicciones sin evaluar (más de 48 horas)\" y \"Registrar retroalimentación\"",
+      "ok": true,
+      "detalle": "bundle: index-x5vi1C5p.js; 28 scripts revisados"
+    },
+    {
+      "nombre": "Ninguna escritura no permitida hacia TEST",
+      "ok": true,
+      "detalle": "2 peticiones distintas de GET, todas permitidas"
+    }
+  ],
+  "checkpoints": [
+    {
+      "paso": "CP-11",
+      "caso": "TC-M08-054, 885 real",
+      "esperado": "La TVCO de la respuesta coincide con la calculada con la regla del RF a partir de \"predicciones\" y \"retroalimentaciones\" de la misma respuesta (porcentaje, tvco_denominador, tasa_error y texto con el formato de CA-3), y la vista muestra ese texto",
+      "fuente": "RF-106 Proceso 4; CA-3; Salida (tasa_error)",
+      "obtenido": "calculado={porcentaje=50, denom=2, tasa_error=50, conflictos=0, texto=\"50% (2 validadas; 6 excluidas: sin retro)\"} | backend={porcentaje=50, denom=2, tasa_error=50, conflictos=0, texto=\"50% (2 validadas; 6 excluidas: sin retro)\"} | pantalla=\"50% (2 validadas; 6 excluidas: sin retro)\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-12",
+      "caso": "TC-M08-056, 885 real",
+      "esperado": "\"pendientes\" contiene exactamente las predicciones sin valoración con más de 48 h, ordenadas por nivel_riesgo descendente y luego por fecha descendente, y la lista de la vista muestra los mismos ítems en ese orden, cada uno con \"Registrar retroalimentación\"",
+      "fuente": "RF-106 Proceso 5; CA-9; CA-4",
+      "obtenido": "calculados(6)=[dd000007, dd000003, dd000005, dd000006, dd000008, dd000004] | backend(total=6)=[dd000007, dd000003, dd000005, dd000006, dd000008, dd000004] | dom(count=6, domOk=true)=[\"1/10/26, 10:00 a. m. · Alto · Condición QA 7Registrar retroalimentació\", \"1/08/26, 10:00 a. m. · Alto · Condición QA 3Registrar retroalimentació\", \"1/09/26, 10:00 a. m. · Medio · Condición QA 5Registrar retroalimentaci\", \"15/09/26, 10:00 a. m. · Bajo · Condición QA 6Registrar retroalimentaci\", \"10/10/26, 10:00 a. m. · Sin riesgo · Condición QA 8Registrar retroalim\", \"15/08/26, 10:00 a. m. · Sin riesgo · Condición QA 4Registrar retroalim\"]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-13",
+      "caso": "TC-M08-055, navegador, conflicto simulado",
+      "esperado": "Al pasar el ratón sobre una de las dos valoraciones en conflicto se muestran ambas: autor, valoración y fecha y hora de cada una (\"QA Vet A → Correcta · <ts_A> / QA Vet B → Incorrecta · <ts_B>\")",
+      "fuente": "RF-106 Restricción 6 a (tooltip \"[Vet A] → [valor_A] · [ts_A] / [Vet B] → [valor_B] · [ts_B]\"); CA-8 (b)",
+      "obtenido": "marcador[1]=\"QA Vet A → Correcta · 15/07/26, 4:00 p. m. / QA Vet B → Incorrecta · 17/07/26, 10:00 p. m.\" | marcador[2]=\"QA Vet A → Correcta · 15/07/26, 4:00 p. m. / QA Vet B → Incorrecta · 17/07/26, 10:00 p. m.\" (esperado fechas 15/07/26, 4:00 p. m. y 17/07/26, 10:00 p. m.)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-14",
+      "caso": "TC-M08-055, navegador, conflicto simulado",
+      "esperado": "El ícono de conflicto de las dos valoraciones es un triángulo amarillo",
+      "fuente": "RF-106 Restricción 6 a; CA-8 (a)",
+      "obtenido": "tema=(sin data-theme); marcador[1]={texto=\"⚠\", fill=\"rgb(245, 197, 24)\", fondo=\"rgb(255,255,255)\", amarillos=133, distintos_del_fondo=144, no_blancos=144} | marcador[2]={texto=\"⚠\", fill=\"rgb(245, 197, 24)\", fondo=\"rgb(255,255,255)\", amarillos=133, distintos_del_fondo=144, no_blancos=144}",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "Línea base 885: 8 predicciones (2 con valoración, 6 sin valoración), 0 eventos, 2 retroalimentaciones, 6 pendientes (niveles=[0,1,2,3]).",
+    "Parte B: GET simulados=1",
+    "Despliegue: bundle index-x5vi1C5p.js en http://127.0.0.1:4173/sigab-test/."
+  ],
+  "retirados": [],
+  "escrituras": [
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/",
+      "resultado": "al servidor (login 1)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    }
+  ]
+}

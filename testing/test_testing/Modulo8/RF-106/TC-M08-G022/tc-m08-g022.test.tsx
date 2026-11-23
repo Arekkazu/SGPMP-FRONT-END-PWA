@@ -2,6 +2,7 @@
 // |------------|-------------------------|-------------|
 // | 2026-11-20 | Juan Sebastian Gutierrez | TC-M08-G022 (TC-M08-054, 055 y 056; RF-106): TVCO, tasa de error, conflictos y pendientes. Parte Vitest (CP-01 a CP-10) |
 // | 2026-11-20 | Juan Sebastian Gutierrez | v1.1: CP-07 y CP-08 buscan el total de conflictos fuera del texto de la TVCO (el control vitest_simulador_conflicto dio OK falso en CP-07) |
+// | 2026-11-21 | Juan Sebastian Gutierrez | v1.3 reintento 1 (INC-M08-NN-G022, GitHub #726): CP-02 pasa a observacion OBS-4 por decision de Sebastian (2026-11-20); el icono de la valoracion se lee sin su <title> ni el marcador hp-grupo (ADAPT-1). El resto de checkpoints, esperados y fuentes, literales |
 // | 2026-11-20 | Juan Sebastian Gutierrez | v1.2: CP-09 y CP-10 comparan la condición exacta (QA-5008-P1 no debe coincidir con P10 a P19) |
 //
 // QA SGPMP - Evaluacion (ronda 1). Presentacion de la vista con respuestas simuladas con la forma REAL del backend
@@ -40,9 +41,7 @@ const CPS: Checkpoint[] = [
   { paso: 'CP-01', caso: 'TC-M08-054 a (5001)',
     esperado: 'La TVCO muestra exactamente «75% (4 validadas; 1 excluida: sin retro)»',
     fuente: 'RF-106 CA-3 (Prueba A); Proceso 4' },
-  { paso: 'CP-02', caso: 'TC-M08-054 a, d y e (5001, 5004, 5005)',
-    esperado: 'Se ve la tasa de error junto a la TVCO: 25 %, 100 % y 0 %',
-    fuente: 'RF-106 Salida («tasa_error (%) = 100% - tvco»); TC-M08-054 (a, d, e)' },
+  // CP-02 (tasa de error visible) pasa a observacion OBS-4 por decision de Sebastian (2026-11-20); se mide abajo.
   { paso: 'CP-03', caso: 'TC-M08-054 b (5002)',
     esperado: '«50% (6 validadas; 1 excluida: sin retro)»',
     fuente: 'RF-106 CA-3; Proceso 4 (PARCIAL y SIN_EVENTO en el denominador)' },
@@ -454,7 +453,9 @@ function textoVisible(): string {
   return norm(document.body.textContent);
 }
 function iconosRetro(): string[] {
-  return Array.from(document.querySelectorAll('.recharts-scatter-symbol text')).map((t) => norm(t.textContent));
+  // ADAPT-1 (reintento 1): solo el texto propio del icono; el <title> hijo es el detalle al pasar el raton.
+  return Array.from(document.querySelectorAll('.recharts-scatter-symbol text:not(.hp-grupo)'))
+    .map((t) => norm(Array.from(t.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent ?? '').join('')));
 }
 function itemsPendientes(): Array<{ texto: string; botones: string[] }> {
   const h3 = Array.from(document.querySelectorAll('h3')).find((el) => norm(el.textContent) === 'Predicciones sin evaluar (más de 48 horas)');
@@ -600,7 +601,7 @@ describe('TC-M08-054 TVCO y tasa de error (RF-106 Proceso 4; CA-3; Restricción 
     expect(ok, obtenido).toBe(true);
   });
 
-  it('CP-02 Tasa de error 25%, 100% y 0% (5001, 5004, 5005)', async () => {
+  it('OBS-4 Tasa de error 25%, 100% y 0% (5001, 5004, 5005; antes CP-02)', async () => {
     const casos: Array<[string, number]> = [['QA-5001', 25], ['QA-5004', 100], ['QA-5005', 0]];
     let ok = true;
     const partes: string[] = [];
@@ -614,8 +615,9 @@ describe('TC-M08-054 TVCO y tasa de error (RF-106 Proceso 4; CA-3; Restricción 
       partes.push(`${etq} (${n}%): ${sel ? `seleccion=${sel}; ` : ''}${t.detalle}`);
     }
     const obtenido = partes.join(' | ');
-    anotar('CP-02', ok, obtenido);
-    expect(ok, obtenido).toBe(true);
+    // Observacion por decision de Sebastian (2026-11-20): no cuenta en el veredicto.
+    observaciones.push(`OBS-4 (medida; antes CP-02, decisión de Sebastian 2026-11-20): tasa de error visible junto a la TVCO (RF-106 Salida, tasa_error = 100% - tvco; CA-11 no la nombra) = ${ok ? 'sí' : 'no'}. ${obtenido}`);
+    expect(partes.length).toBe(3);
   });
 
   it('CP-03 TVCO 50% con PARCIAL y SIN_EVENTO (5002)', async () => {

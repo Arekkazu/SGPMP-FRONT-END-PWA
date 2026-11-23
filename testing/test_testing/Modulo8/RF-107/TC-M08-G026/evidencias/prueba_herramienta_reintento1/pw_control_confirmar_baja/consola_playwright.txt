@@ -1,0 +1,28 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.pw.ts:148:1 › TC-M08-G026 parte navegador real (CP-21 a CP-24) (17.8s)
+
+
+  1) [chromium] › testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.pw.ts:148:1 › TC-M08-G026 parte navegador real (CP-21 a CP-24) 
+
+    TimeoutError: locator.click: Timeout 15000ms exceeded.
+    Call log:
+      - waiting for getByRole('dialog', { name: 'Registrar baja' }).getByRole('button', { name: 'Volver' })
+
+
+      207 |   await formBaja.getByRole('button', { name: 'Confirmar baja' }).click();
+      208 |   await page.waitForTimeout(1_000);
+    > 209 |   await formBaja.getByRole('button', { name: 'Volver' }).click();
+          |                                                          ^
+      210 |   await page.keyboard.press('Escape');
+      211 |   await expect(page.getByRole('dialog', { name: 'Registrar baja' })).toBeHidden({ timeout: 5_000 }).catch(() => undefined);
+      212 |
+        at /home/claude/g024/fe/testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.pw.ts:209:58
+
+    Error Context: ../../g026/pr1/pw_control_confirmar_baja/pw-salida/tc-m08-g026.pw.ts-TC-M08-G-5807d-vegador-real-CP-21-a-CP-24--chromium/error-context.md
+
+    Error Context: ../../g026/pr1/pw_control_confirmar_baja/pw-salida/tc-m08-g026.pw.ts-TC-M08-G-5807d-vegador-real-CP-21-a-CP-24--chromium/error-context.md
+
+  1 failed
+    [chromium] › testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.pw.ts:148:1 › TC-M08-G026 parte navegador real (CP-21 a CP-24) 

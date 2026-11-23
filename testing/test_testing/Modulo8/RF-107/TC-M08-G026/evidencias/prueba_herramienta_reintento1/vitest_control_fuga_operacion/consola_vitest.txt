@@ -1,0 +1,905 @@
+
+ RUN  v4.1.11 /home/claude/g024/fe
+
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-065 Cola de errores y saturacion (RF-107 8.2 y 8.3) > CP-01 y CP-02 tres errores visibles, el cuarto en cola y entra al cerrar el primero 45ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-065 Cola de errores y saturacion (RF-107 8.2 y 8.3) > CP-03 y CP-04 cinco sin aviso; seis con el aviso de saturacion en lugar del error mas antiguo 11ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-065 Cola de errores y saturacion (RF-107 8.2 y 8.3) > CP-05 el aviso de saturacion abre el historial de la sesion en orden cronologico 39ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-065 Cola de errores y saturacion (RF-107 8.2 y 8.3) > CP-06 la cola se descarta al navegar fuera del modulo que origino los errores 16ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-066 Coexistencia entre tipos de mensaje (RF-107 8.2) > CP-07 el error se ubica debajo del exito y el exito se va por su temporizador 7ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-066 Coexistencia entre tipos de mensaje (RF-107 8.2) > CP-08 un exito no desplaza ni oculta un error activo 7ms
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-066 Coexistencia entre tipos de mensaje (RF-107 8.2) > CP-09 con el proceso en curso llega un error: el indicador se cierra y el error toma su lugar 5100ms
+   → indicador de proceso no visible: expected false to be true // Object.is equality
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-066 Coexistencia entre tipos de mensaje (RF-107 8.2) > CP-10 con el modal critico abierto el icono de sincronizacion sigue en el DOM y no esta oculto 33ms
+   → Unable to find an accessible element with the role "dialog" and name "Confirma la baja"
+
+Here are the accessible roles:
+
+  banner:
+
+  Name "":
+  [36m<header[39m
+    [33mclass[39m=[32m"ds-appbar"[39m
+    [33mrole[39m=[32m"banner"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Estado de sincronización: Sincronizando. Ver detalle":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Estado de sincronización: Sincronizando. Ver detalle"[39m
+    [33mclass[39m=[32m"ds-sync ds-sync--SINCRONIZANDO"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Cerrar alerta":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Cerrar alerta"[39m
+    [33mclass[39m=[32m"ds-alert__close"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  main:
+
+  Name "":
+  [36m<main[39m
+    [33mid[39m=[32m"contenido-principal"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p />[39m
+
+  --------------------------------------------------
+  alert:
+
+  Name "":
+  [36m<div[39m
+    [33maria-live[39m=[32m"assertive"[39m
+    [33mclass[39m=[32m"ds-alert ds-alert--info"[39m
+    [33mrole[39m=[32m"alert"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<span[39m
+      [33mdata-testid[39m=[32m"qa-ruta"[39m
+    [36m>[39m
+      [0m/prediccion/historial-predictivo[0m
+    [36m</span>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"ds-app-content"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"ds-appbar"[39m
+        [33mrole[39m=[32m"banner"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"ds-appbar__right"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Estado de sincronización: Sincronizando. Ver detalle"[39m
+            [33mclass[39m=[32m"ds-sync ds-sync--SINCRONIZANDO"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-cloud-cog"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"18"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"18"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m10.852 19.772-.383.924"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m13.148 14.228.383-.923"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M13.148 19.772a3 3 0 1 0-2.296-5.544l-.383-.923"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m13.53 20.696-.382-.924a3 3 0 1 1-2.296-5.544"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m14.772 15.852.923-.383"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m14.772 18.148.923.383"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M4.2 15.1a7 7 0 1 1 9.93-9.858A7 7 0 0 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.2"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9.228 15.852-.923-.383"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9.228 18.148-.923.383"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"ds-sync__texto"[39m
+            [36m>[39m
+              [0mSincronizando[0m
+            [36m</span>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<main[39m
+        [33mid[39m=[32m"contenido-principal"[39m
+      [36m>[39m
+        [36m<p>[39m
+          [0mContenido[0m
+        [36m</p>[39m
+      [36m</main>[39m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"ds-toasts"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33maria-live[39m=[32m"assertive"[39m
+        [33mclass[39m=[32m"ds-alert ds-alert--info"[39m
+        [33mrole[39m=[32m"alert"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"ds-alert__icon"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-info"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"12"[39m
+              [33mr[39m=[32m"10"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 16v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 8h.01"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</span>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"ds-alert__body"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"ds-alert__title"[39m
+          [36m>[39m
+            [0mEspera a que finalice la generación del reporte antes de continuar.[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Cerrar alerta"[39m
+          [33mclass[39m=[32m"ds-alert__close"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-x"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M18 6 6 18"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m6 6 12 12"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-067 Sin mensajes duplicados (RF-107 8.3, CA-12) > CP-11 y CP-12 misma operacion: actualiza el banner visible y, cerrado, descarta el siguiente 13ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-067 Sin mensajes duplicados (RF-107 8.3, CA-12) > CP-13 misma operacion ya en cola: no se genera otro mensaje 13ms
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-074 Metadatos e historial de sesion (RF-107 8.3 y 8.5) > CP-14 a CP-20 el historial de la sesion con exito, error, cola y modal critico 49ms
+   → Unable to find an accessible element with the role "button" and name "Cancelar"
+
+Here are the accessible roles:
+
+  button:
+
+  Name "Hay 6 notificaciones pendientes. Toca aquí para ver todas.":
+  [36m<button[39m
+    [33mclass[39m=[32m"ds-toasts__saturacion"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Cerrar alerta":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Cerrar alerta"[39m
+    [33mclass[39m=[32m"ds-alert__close"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Cerrar alerta":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Cerrar alerta"[39m
+    [33mclass[39m=[32m"ds-alert__close"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  alert:
+
+  Name "":
+  [36m<div[39m
+    [33maria-live[39m=[32m"assertive"[39m
+    [33mclass[39m=[32m"ds-alert ds-alert--error"[39m
+    [33mrole[39m=[32m"alert"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<div[39m
+    [33maria-live[39m=[32m"assertive"[39m
+    [33mclass[39m=[32m"ds-alert ds-alert--error"[39m
+    [33mrole[39m=[32m"alert"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<span[39m
+      [33mdata-testid[39m=[32m"qa-ruta"[39m
+    [36m>[39m
+      [0m/prediccion/historial-predictivo[0m
+    [36m</span>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"ds-toasts"[39m
+    [36m>[39m
+      [36m<button[39m
+        [33mclass[39m=[32m"ds-toasts__saturacion"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0mHay 6 notificaciones pendientes. Toca aquí para ver todas.[0m
+      [36m</button>[39m
+      [36m<div[39m
+        [33maria-live[39m=[32m"assertive"[39m
+        [33mclass[39m=[32m"ds-alert ds-alert--error"[39m
+        [33mrole[39m=[32m"alert"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"ds-alert__icon"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-circle-x"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"12"[39m
+              [33mr[39m=[32m"10"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m15 9-6 6"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m9 9 6 6"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</span>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"ds-alert__body"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"ds-alert__title"[39m
+          [36m>[39m
+            [0mError F3[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Cerrar alerta"[39m
+          [33mclass[39m=[32m"ds-alert__close"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-x"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M18 6 6 18"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m6 6 12 12"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33maria-live[39m=[32m"assertive"[39m
+        [33mclass[39m=[32m"ds-alert ds-alert--error"[39m
+        [33mrole[39m=[32m"alert"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"ds-alert__icon"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-circle-x"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"12"[39m
+              [33mr[39m=[32m"10"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m15 9-6 6"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m9 9 6 6"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</span>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"ds-alert__body"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"ds-alert__title"[39m
+          [36m>[39m
+            [0mError F4[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Cerrar alerta"[39m
+          [33mclass[39m=[32m"ds-alert__close"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-x"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M18 6 6 18"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m6 6 12 12"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+stderr | testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > Observaciones medidas > OBS-3 doble clic en Exportar (067 c, FA-6 de la version anterior)
+[i18n] falta la clave "common:errores.por_codigo.ERROR_INTERNO" en es-CO — se muestra el espanol
+
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > Observaciones medidas > OBS-3 doble clic en Exportar (067 c, FA-6 de la version anterior) 5065ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > Observaciones medidas > OBS-5, OBS-6 y OBS-8 casos que la 8.3 no define 13ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-066 Coexistencia entre tipos de mensaje (RF-107 8.2) > CP-09 con el proceso en curso llega un error: el indicador se cierra y el error toma su lugar
+AssertionError: indicador de proceso no visible: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx:527:65
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-066 Coexistencia entre tipos de mensaje (RF-107 8.2) > CP-10 con el modal critico abierto el icono de sincronizacion sigue en el DOM y no esta oculto
+TestingLibraryElementError: Unable to find an accessible element with the role "dialog" and name "Confirma la baja"
+
+Here are the accessible roles:
+
+  banner:
+
+  Name "":
+  [36m<header[39m
+    [33mclass[39m=[32m"ds-appbar"[39m
+    [33mrole[39m=[32m"banner"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "Estado de sincronización: Sincronizando. Ver detalle":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Estado de sincronización: Sincronizando. Ver detalle"[39m
+    [33mclass[39m=[32m"ds-sync ds-sync--SINCRONIZANDO"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Cerrar alerta":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Cerrar alerta"[39m
+    [33mclass[39m=[32m"ds-alert__close"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  main:
+
+  Name "":
+  [36m<main[39m
+    [33mid[39m=[32m"contenido-principal"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  paragraph:
+
+  Name "":
+  [36m<p />[39m
+
+  --------------------------------------------------
+  alert:
+
+  Name "":
+  [36m<div[39m
+    [33maria-live[39m=[32m"assertive"[39m
+    [33mclass[39m=[32m"ds-alert ds-alert--info"[39m
+    [33mrole[39m=[32m"alert"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<span[39m
+      [33mdata-testid[39m=[32m"qa-ruta"[39m
+    [36m>[39m
+      [0m/prediccion/historial-predictivo[0m
+    [36m</span>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"ds-app-content"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33mclass[39m=[32m"ds-appbar"[39m
+        [33mrole[39m=[32m"banner"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"ds-appbar__right"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-label[39m=[32m"Estado de sincronización: Sincronizando. Ver detalle"[39m
+            [33mclass[39m=[32m"ds-sync ds-sync--SINCRONIZANDO"[39m
+            [33mtype[39m=[32m"button"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-cloud-cog"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"18"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"18"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m10.852 19.772-.383.924"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m13.148 14.228.383-.923"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M13.148 19.772a3 3 0 1 0-2.296-5.544l-.383-.923"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m13.53 20.696-.382-.924a3 3 0 1 1-2.296-5.544"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m14.772 15.852.923-.383"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m14.772 18.148.923.383"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M4.2 15.1a7 7 0 1 1 9.93-9.858A7 7 0 0 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.2"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9.228 15.852-.923-.383"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"m9.228 18.148-.923.383"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"ds-sync__texto"[39m
+            [36m>[39m
+              [0mSincronizando[0m
+            [36m</span>[39m
+          [36m</button>[39m
+        [36m</div>[39m
+      [36m</header>[39m
+      [36m<main[39m
+        [33mid[39m=[32m"contenido-principal"[39m
+      [36m>[39m
+        [36m<p>[39m
+          [0mContenido[0m
+        [36m</p>[39m
+      [36m</main>[39m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"ds-toasts"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33maria-live[39m=[32m"assertive"[39m
+        [33mclass[39m=[32m"ds-alert ds-alert--info"[39m
+        [33mrole[39m=[32m"alert"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"ds-alert__icon"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-info"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"12"[39m
+              [33mr[39m=[32m"10"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 16v-4"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M12 8h.01"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</span>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"ds-alert__body"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"ds-alert__title"[39m
+          [36m>[39m
+            [0mEspera a que finalice la generación del reporte antes de continuar.[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Cerrar alerta"[39m
+          [33mclass[39m=[32m"ds-alert__close"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-x"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M18 6 6 18"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m6 6 12 12"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx:563:28
+    561|     }
+    562|     render(<Anfitrion><ConModal /></Anfitrion>);
+    563|     const dialogo = screen.getByRole('dialog', { name: 'Confirma la ba…
+       |                            ^
+    564|     const icono = document.querySelector('.ds-sync') as HTMLElement | …
+    565|     const ocultos: string[] = [];
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx > TC-M08-074 Metadatos e historial de sesion (RF-107 8.3 y 8.5) > CP-14 a CP-20 el historial de la sesion con exito, error, cola y modal critico
+TestingLibraryElementError: Unable to find an accessible element with the role "button" and name "Cancelar"
+
+Here are the accessible roles:
+
+  button:
+
+  Name "Hay 6 notificaciones pendientes. Toca aquí para ver todas.":
+  [36m<button[39m
+    [33mclass[39m=[32m"ds-toasts__saturacion"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Cerrar alerta":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Cerrar alerta"[39m
+    [33mclass[39m=[32m"ds-alert__close"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "Cerrar alerta":
+  [36m<button[39m
+    [33maria-label[39m=[32m"Cerrar alerta"[39m
+    [33mclass[39m=[32m"ds-alert__close"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  alert:
+
+  Name "":
+  [36m<div[39m
+    [33maria-live[39m=[32m"assertive"[39m
+    [33mclass[39m=[32m"ds-alert ds-alert--error"[39m
+    [33mrole[39m=[32m"alert"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<div[39m
+    [33maria-live[39m=[32m"assertive"[39m
+    [33mclass[39m=[32m"ds-alert ds-alert--error"[39m
+    [33mrole[39m=[32m"alert"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<span[39m
+      [33mdata-testid[39m=[32m"qa-ruta"[39m
+    [36m>[39m
+      [0m/prediccion/historial-predictivo[0m
+    [36m</span>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"ds-toasts"[39m
+    [36m>[39m
+      [36m<button[39m
+        [33mclass[39m=[32m"ds-toasts__saturacion"[39m
+        [33mtype[39m=[32m"button"[39m
+      [36m>[39m
+        [0mHay 6 notificaciones pendientes. Toca aquí para ver todas.[0m
+      [36m</button>[39m
+      [36m<div[39m
+        [33maria-live[39m=[32m"assertive"[39m
+        [33mclass[39m=[32m"ds-alert ds-alert--error"[39m
+        [33mrole[39m=[32m"alert"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"ds-alert__icon"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-circle-x"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"12"[39m
+              [33mr[39m=[32m"10"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m15 9-6 6"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m9 9 6 6"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</span>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"ds-alert__body"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"ds-alert__title"[39m
+          [36m>[39m
+            [0mError F3[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Cerrar alerta"[39m
+          [33mclass[39m=[32m"ds-alert__close"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-x"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M18 6 6 18"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m6 6 12 12"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33maria-live[39m=[32m"assertive"[39m
+        [33mclass[39m=[32m"ds-alert ds-alert--error"[39m
+        [33mrole[39m=[32m"alert"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"ds-alert__icon"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-circle-x"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"16"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"16"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"12"[39m
+              [33mr[39m=[32m"10"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m15 9-6 6"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m9 9 6 6"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</span>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"ds-alert__body"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"ds-alert__title"[39m
+          [36m>[39m
+            [0mError F4[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<button[39m
+          [33maria-label[39m=[32m"Cerrar alerta"[39m
+          [33mclass[39m=[32m"ds-alert__close"[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-x"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"14"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"14"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<path[39m
+              [33md[39m=[32m"M18 6 6 18"[39m
+            [36m/>[39m
+            [36m<path[39m
+              [33md[39m=[32m"m6 6 12 12"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G026/qa_fuga.test.tsx:669:28
+    667|     const modalVisto = screen.queryByRole('dialog', { name: '¿Confirma…
+    668|     await irA('2026-11-20T09:07:30-05:00');
+    669|     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+       |                            ^
+    670|     // 09:08 abrir el historial desde el aviso de saturacion
+    671|     await irA('2026-11-20T09:08:00-05:00');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 10 passed (13)
+   Start at  13:49:48
+   Duration  11.72s (transform 530ms, setup 95ms, import 848ms, tests 10.42s, environment 246ms)
+

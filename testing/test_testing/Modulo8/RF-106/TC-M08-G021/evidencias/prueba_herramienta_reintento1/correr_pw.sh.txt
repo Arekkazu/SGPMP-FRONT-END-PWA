@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Prueba de la herramienta (Playwright, G021): build local + API simulada. Uso: correr_pw.sh <build_dir> <escenario> <staging> <spec_dir>
+set -u
+BUILD="$1"; ESC="$2"; ST="$3"; SPECDIR="$4"
+FE=/home/claude/g020r1/fe
+mkdir -p "$ST"
+MOCK_LOG="$ST/mock.log" node /home/claude/g021r1/tools/servidor.mjs "$BUILD" "$ESC" 4173 > "$ST/servidor.txt" 2>&1 &
+PID=$!
+sleep 1.5
+cd "$FE"
+QA_FRONT_URL=http://127.0.0.1:4173/sigab-test/ QA_CHROME_PATH=/usr/bin/google-chrome STAGING_DIR="$ST" REINTENTO=1 RUN_ID="ph-$ESC" \
+QA_VET_EMAIL=vet.qa@example.test QA_VET_PASSWORD=clave-simulada TZ=America/Bogota \
+  timeout 400 pnpm exec playwright test --config "$SPECDIR/playwright.config.ts" > "$ST/consola_playwright.txt" 2>&1
+echo "exit_playwright=$?"
+kill $PID 2>/dev/null; wait $PID 2>/dev/null

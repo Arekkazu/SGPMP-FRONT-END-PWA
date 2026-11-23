@@ -1,0 +1,134 @@
+"""Aplica los cambios exactos del reintento 1 al spec de G020 (cada texto viejo debe aparecer una sola vez)."""
+import sys
+
+ruta = sys.argv[1]
+s = open(ruta, encoding='utf-8').read()
+
+CAMBIOS = []
+
+# E0 historial
+CAMBIOS.append((
+    "// | 2026-11-20 | Juan Sebastian Gutierrez | TC-M08-G020 (TC-M08-051 y 057; RF-106): linea de tiempo, marcadores, hora de Bogota y estados vacios o parciales |\n",
+    "// | 2026-11-20 | Juan Sebastian Gutierrez | TC-M08-G020 (TC-M08-051 y 057; RF-106): linea de tiempo, marcadores, hora de Bogota y estados vacios o parciales |\n"
+    "// | 2026-11-21 | Juan Sebastian Gutierrez | v1.1 reintento 1 (INC-M08-387-G020): checkpoints, esperados y fuentes literales de la ronda 1; solo cambia la forma de medir porque el arreglo cambio el DOM: eventos <rect> (ADAPT-1), relleno var(--sem-error) con precondicion de tokens.css (ADAPT-2), texto de la valoracion sin su <title> y sin el marcador hp-grupo (ADAPT-3); valoraciones medidas en la fecha de su prediccion por decision de Sebastian 2026-11-21 (opcion B, ADAPT-4; OBS-6) |\n",
+))
+
+# E1 lectores de marcadores
+CAMBIOS.append((
+    "function contarMarcadoresEvento(): number {\n  return document.querySelectorAll('.recharts-scatter-symbol path').length;\n}",
+    "// ADAPT-1 (reintento 1): desde a74c51cb el evento es un <rect> propio; se aceptan path (ronda 1) y rect.\n"
+    "const SEL_EVENTO = '.recharts-scatter-symbol path, .recharts-scatter-symbol rect';\n"
+    "// ADAPT-3 (reintento 1): el marcador \"N eventos\" (hp-grupo) tambien es un <text> del scatter; no es una valoracion.\n"
+    "const SEL_VALORACION = '.recharts-scatter-symbol text:not(.hp-grupo)';\n\n"
+    "function contarMarcadoresEvento(): number {\n  return document.querySelectorAll(SEL_EVENTO).length;\n}",
+))
+CAMBIOS.append((
+    "function contarMarcadoresValoracion(): number {\n  return document.querySelectorAll('.recharts-scatter-symbol text').length;\n}",
+    "function contarMarcadoresValoracion(): number {\n  return document.querySelectorAll(SEL_VALORACION).length;\n}",
+))
+CAMBIOS.append((
+    "  return Array.from(document.querySelectorAll('.recharts-scatter-symbol path')).map((el) => {\n"
+    "    const cxAttr = el.getAttribute('cx');\n"
+    "    const cyAttr = el.getAttribute('cy');\n"
+    "    let x = Number.NaN;\n"
+    "    let y = Number.NaN;\n"
+    "    if (cxAttr !== null && cyAttr !== null) {",
+    "  return Array.from(document.querySelectorAll(SEL_EVENTO)).map((el) => {\n"
+    "    const cxAttr = el.getAttribute('cx');\n"
+    "    const cyAttr = el.getAttribute('cy');\n"
+    "    let x = Number.NaN;\n"
+    "    let y = Number.NaN;\n"
+    "    if (el.tagName.toLowerCase() === 'rect') {\n"
+    "      // ADAPT-1: centro del rectangulo\n"
+    "      x = Number(el.getAttribute('x')) + Number(el.getAttribute('width')) / 2;\n"
+    "      y = Number(el.getAttribute('y')) + Number(el.getAttribute('height')) / 2;\n"
+    "    } else if (cxAttr !== null && cyAttr !== null) {",
+))
+CAMBIOS.append((
+    "  return Array.from(document.querySelectorAll('.recharts-scatter-symbol text')).map((el) => ({\n"
+    "    x: Number(el.getAttribute('x')),\n"
+    "    y: Number(el.getAttribute('y')),\n"
+    "    texto: (el.textContent ?? '').trim(),\n"
+    "  }));",
+    "  return Array.from(document.querySelectorAll(SEL_VALORACION)).map((el) => ({\n"
+    "    x: Number(el.getAttribute('x')),\n"
+    "    y: Number(el.getAttribute('y')),\n"
+    "    // ADAPT-3: solo el texto propio del marcador; el <title> hijo es el detalle al pasar el raton.\n"
+    "    texto: Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent ?? '').join('').trim(),\n"
+    "  }));",
+))
+
+# E2 CP-02: rojo y tiempo de las valoraciones
+CAMBIOS.append((
+    "      evs.every((e) => e.fill.includes('--danger-600') || e.fill.toLowerCase().includes('#dc2626'));",
+    "      // ADAPT-2: el arreglo usa el token var(--sem-error); la precondicion 5 verifica que tokens.css lo define en rojo.\n"
+    "      evs.every((e) => e.fill.includes('--danger-600') || e.fill.toLowerCase().includes('#dc2626') || e.fill.includes('--sem-error'));",
+))
+CAMBIOS.append((
+    "    const tRets = RETROS_BASE.map((r) => new Date(r.fecha).getTime()).sort((a, b) => a - b);",
+    "    // ADAPT-4 (decision de Sebastian 2026-11-21, opcion B): la valoracion se ubica en la fecha de su prediccion.\n"
+    "    const tRets = RETROS_BASE.map((r) => new Date(fechaPrediccionDe(r)).getTime()).sort((a, b) => a - b);",
+))
+
+# E3 CP-05: tiempo del ultimo marcador (valoracion del 31/10, de p7)
+CAMBIOS.append((
+    "    const tUltRetro = new Date('2026-10-31T12:00:00Z').getTime();",
+    "    // ADAPT-4 (opcion B): la valoracion de 2026-10-31T12:00:00Z (p7) se dibuja en la fecha de su prediccion.\n"
+    "    const tUltRetro = new Date(fechaPrediccionDe(RETROS_BASE.find((r) => r.fecha === '2026-10-31T12:00:00Z')!)).getTime();",
+))
+
+# E4 funcion auxiliar (junto a pendientesDeBase)
+CAMBIOS.append((
+    "function pendientesDeBase(preds: MarcadorRaw[]) {",
+    "/** ADAPT-4: fecha de la prediccion evaluada por una valoracion (opcion B de Sebastian, 2026-11-21). */\n"
+    "function fechaPrediccionDe(r: MarcadorRaw): string {\n"
+    "  const p = PREDICCIONES_BASE.find((x) => x.id_resultado_inferencia === r.id_resultado_inferencia);\n"
+    "  if (!p) throw new Error(`Valoracion sin prediccion en los datos simulados: ${r.id_resultado_inferencia}`);\n"
+    "  return p.fecha;\n"
+    "}\n\n"
+    "function pendientesDeBase(preds: MarcadorRaw[]) {",
+))
+
+# E5 precondicion de tokens y observaciones fijas del reintento
+CAMBIOS.append((
+    "  const prec4 = '{datos.mensaje && <Alert variant=\"info\" title={datos.mensaje} />}';\n",
+    "  const prec4 = '{datos.mensaje && <Alert variant=\"info\" title={datos.mensaje} />}';\n",
+))
+s_marca = "    detalle: prec4,\n  });\n"
+assert s.count(s_marca) == 1, f'marca prec4: {s.count(s_marca)}'
+NUEVO_PREC = (
+    "    detalle: prec4,\n  });\n"
+    "  // Precondicion 5 (reintento 1, ADAPT-2): todas las definiciones de --sem-error en tokens.css son rojas\n"
+    "  // (matiz <= 20 o >= 340 grados y saturacion >= 0,5).\n"
+    "  const tokens = readFileSync(join(RAIZ_FRONT, 'src/shared/design-system/tokens.css'), 'utf8');\n"
+    "  const defs = Array.from(tokens.matchAll(/--sem-error\\s*:\\s*(#[0-9a-fA-F]{6})\\s*;/g)).map((m) => m[1]);\n"
+    "  const esRojo = (hex: string) => {\n"
+    "    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);\n"
+    "    const max = Math.max(r, g, b);\n"
+    "    const min = Math.min(r, g, b);\n"
+    "    if (max !== r || max === min) return false;\n"
+    "    const h = (60 * ((g - b) / (max - min)) + 360) % 360;\n"
+    "    const l = (max + min) / 2;\n"
+    "    const sat = (max - min) / (1 - Math.abs(2 * l - 1));\n"
+    "    return (h <= 20 || h >= 340) && sat >= 0.5;\n"
+    "  };\n"
+    "  precondiciones.push({\n"
+    "    nombre: 'tokens.css define --sem-error en rojo (todas sus definiciones)',\n"
+    "    ok: defs.length > 0 && defs.every(esRojo),\n"
+    "    detalle: `--sem-error=[${defs.join(', ')}]`,\n"
+    "  });\n"
+    "  observaciones.push(\n"
+    "    'ADAPT-1 a ADAPT-4 (reintento 1): checkpoints, esperados y fuentes literales de la ronda 1. Cambia solo la forma de medir: eventos <rect> (a74c51cb), relleno var(--sem-error), texto de la valoracion sin su <title> ni el marcador hp-grupo, y valoraciones en la fecha de su prediccion (decision de Sebastian 2026-11-21, opcion B). Detalle en evidencias/DISENO_TC-M08-G020.md.',\n"
+    "    'OBS-6: la marca de cada valoracion se dibuja sobre su prediccion (HistorialPredictivoView.tsx:96-99, 7297f934, QA M08 CU04 H-02). RF-106 Proceso 2.1 alinea las retroalimentaciones con \"ts = registro Veterinario\"; Proceso 3 las pone como \"marcadores sobre la linea\" y CA-8 (a) \"en esa posicion\". Decision de Sebastian 2026-11-21: se sigue la entrega (opcion B). Para los lideres.',\n"
+    "    'OBS-7: el dominio del eje X se arma con new Date(`${fecha}T00:00:00`) y `T23:59:59.999` sin zona (HistorialPredictivoView.tsx:45-48): depende de la zona del equipo, como la hora de OBS-1. Medido con TZ=America/Bogota.',\n"
+    "  );\n"
+)
+s = s.replace(s_marca, NUEVO_PREC)
+
+for viejo, nuevo in CAMBIOS:
+    n = s.count(viejo)
+    assert n == 1, f'{n} apariciones de: {viejo[:80]!r}'
+    s = s.replace(viejo, nuevo)
+
+open(ruta, 'w', encoding='utf-8', newline='\n').write(s)
+print('ok', len(CAMBIOS) + 1, 'cambios')

@@ -1,0 +1,147 @@
+{
+  "tc": "TC-M08-G021",
+  "parte": "playwright",
+  "reintento": 1,
+  "run_id": "ph-grupo_desorden",
+  "fecha": "2026-11-22T00:45:03.353Z",
+  "ambiente": "http://127.0.0.1:4173/sigab-test/",
+  "summary": {
+    "total": 8,
+    "ok": 6,
+    "falla": 2,
+    "veredicto": "Rechazado"
+  },
+  "precondiciones": [
+    {
+      "nombre": "Credenciales del Veterinario en memoria",
+      "ok": true,
+      "detalle": "QA_VET_EMAIL / QA_VET_PASSWORD presentes"
+    },
+    {
+      "nombre": "Login del Veterinario 97 (una sola vez)",
+      "ok": true,
+      "detalle": "URL tras el login: /sigab-test/dashboard"
+    },
+    {
+      "nombre": "El activo 885 figura entre los animales o lotes del Veterinario",
+      "ok": true,
+      "detalle": "1 opciones"
+    },
+    {
+      "nombre": "GET /historial-predictivo/885 (Lineal) responde 200",
+      "ok": true,
+      "detalle": "HTTP 200"
+    },
+    {
+      "nombre": "Ventana de correspondencia de TEST = 12 h",
+      "ok": true,
+      "detalle": "ventana_correspondencia_horas=12"
+    },
+    {
+      "nombre": "Datos de CA-7 en el 885: d1f3cc43-2684 a 600 min, f056f99d-2685 a 30 min y 511a6d66-2686 a 1200 min",
+      "ok": true,
+      "detalle": "indices pred=6/7/8 eventos=0/1/2; minutos A=600 C=30 B=1200; 9 predicciones, 3 eventos"
+    },
+    {
+      "nombre": "GET /historial-predictivo/885 (Agrupada) responde 200",
+      "ok": true,
+      "detalle": "HTTP 200"
+    },
+    {
+      "nombre": "El frontend desplegado tiene la vista del historial predictivo con el arreglo de #722 (\"Una línea punteada une la predicción con su evento sanitario\", \"grupos de eventos cercanos\")",
+      "ok": true,
+      "detalle": "bundle: index-x5vi1C5p.js; 28 scripts revisados"
+    },
+    {
+      "nombre": "Ninguna escritura no permitida hacia TEST",
+      "ok": true,
+      "detalle": "2 peticiones distintas de GET, todas permitidas"
+    }
+  ],
+  "checkpoints": [
+    {
+      "paso": "CP-10",
+      "caso": "TC-M08-052 CA-7 (A), respuesta del backend (885)",
+      "esperado": "En \"correspondencias\" hay un elemento que une la predicción d1f3cc43 con el evento 2684, con diferencia_minutos 600, diferencia \"Diferencia: 10 h\" y colision false",
+      "fuente": "RF-106 Restricción 5b; CA-7 (A)",
+      "obtenido": "{pred=d1f3cc43, evento=2684, diferencia_minutos=600, diferencia=\"Diferencia: 10 h\", colision=false}",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-11",
+      "caso": "TC-M08-052 CA-7 (B), respuesta del backend (885)",
+      "esperado": "Ningún elemento de \"correspondencias\" une la predicción 511a6d66 con el evento 2686 (1200 min, fuera de la ventana)",
+      "fuente": "RF-106 Restricción 5b (si supera la ventana: independientes); CA-7 (B)",
+      "obtenido": "elementos 511a6d66-2686 en correspondencias: 0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-12",
+      "caso": "TC-M08-053 CA-7 (C), respuesta del backend (885)",
+      "esperado": "Existe un grupo que contiene la predicción f056f99d y el evento 2685 (30 min), y en ese grupo el evento va antes que la predicción",
+      "fuente": "RF-106 Restricción 5c (colisión ≤ 1 h; prioridad: RF-72, RF-41, RF-67); CA-7 (C)",
+      "obtenido": "grupo 1 de 2: [PRED:f056f99d@2026-10-26T21:06:22+00:00, EVT:2685@2026-10-26T21:36:22+00:00]",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-13",
+      "caso": "TC-M08-052, respuesta del backend, todos los pares (885)",
+      "esperado": "El conjunto de pares (predicción, evento) de \"correspondencias\" es exactamente el de los pares con |Δt| ≤ 12 h calculado con las fechas de \"predicciones\" y \"eventos_sanitarios\" de la respuesta, y cada diferencia_minutos = floor(|Δt| / 60 s)",
+      "fuente": "RF-106 Restricción 5b; Proceso 2.1 (regla de correspondencia R5b)",
+      "obtenido": "calculados=[d1f3cc43-2684:600, f056f99d-2685:30]; backend=[d1f3cc43-2684:600, f056f99d-2685:30]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-14",
+      "caso": "TC-M08-052 CA-7 (A), vista en TEST (885)",
+      "esperado": "En Lineal y en Agrupada: exactamente 1 conector punteado entre el punto de d1f3cc43 y el marcador de 2684, y al pasar el ratón sobre el marcador de 2684 el texto que se muestra contiene \"Diferencia: 10 h\"",
+      "fuente": "RF-106 Restricción 5b; Proceso 2.1; CA-7 (A) (conector discontinuo; tooltip \"Diferencia: 10 h\")",
+      "obtenido": "LINEAL: puntos=9/9; eventos=3/3; conectores_d1f3cc43_2684=1; texto_al_pasar_el_raton=\"25/10/26, 12:06 a. m. · Evento 2684 · Vet QA · Diferencia: 10 h\" | AGRUPADO: puntos=9/9; eventos=3/3; conectores_d1f3cc43_2684=1; texto_al_pasar_el_raton=\"25/10/26, 12:06 a. m. · Evento 2684 · Vet QA · Diferencia: 10 h\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-15",
+      "caso": "TC-M08-052 CA-7 (B), vista en TEST (885)",
+      "esperado": "En Lineal y en Agrupada: 0 conectores entre el punto de 511a6d66 y el marcador de 2686",
+      "fuente": "RF-106 Restricción 5b; CA-7 (B) (marcadores independientes sin conector)",
+      "obtenido": "LINEAL: conectores_511a6d66_2686=0 | AGRUPADO: conectores_511a6d66_2686=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-16",
+      "caso": "TC-M08-053 CA-7 (C), vista en TEST (885)",
+      "esperado": "En Lineal y en Agrupada: un marcador \"N eventos\" dentro de la gráfica (N = tamaño del grupo de CP-12) en la posición de f056f99d/2685",
+      "fuente": "RF-106 Restricción 5c; Proceso 2.1 (marcador agrupado \"N eventos\"); CA-7 (C)",
+      "obtenido": "LINEAL: marcadores \"N eventos\" en la gráfica=[\"2 eventos\"@x=967.8, \"4 eventos\"@x=1031.9] (miembros x=967.8/967.9, N=2) | AGRUPADO: marcadores \"N eventos\" en la gráfica=[\"2 eventos\"@x=967.8, \"4 eventos\"@x=1031.9] (miembros x=967.8/967.9, N=2)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-17",
+      "caso": "TC-M08-053 orden al expandir, vista en TEST (885)",
+      "esperado": "En Agrupada, al expandir los grupos, el grupo de CP-12 lista sus elementos en el orden de la regla (retroalimentaciones, eventos sanitarios, predicciones; a igual tipo, por fecha), calculado con sus miembros; cada elemento se identifica por su fecha y hora",
+      "fuente": "RF-106 Restricción 5c (prioridad visual al expandir)",
+      "obtenido": "details_open=true; grupo 1 de 2: [\"Predicción · 26/10/26, 4:06 p. m.\", \"historialpredictivo.tipo.CONTROL_PREVENTIVO · 26/10/26, 4:36 p. m.\"]; orden_identificado=[PRED:f056f99d, EVT:2685]; orden_esperado=[EVT:2685, PRED:f056f99d]",
+      "estado": "FALLA"
+    }
+  ],
+  "observaciones": [
+    "Datos reales del 885: ventana=12 h; 9 predicciones, 3 eventos, 4 retroalimentaciones; correspondencias=[d1f3cc43-2684 600 min \"Diferencia: 10 h\" colision=false; f056f99d-2685 30 min \"Diferencia: 0 h 30 min\" colision=true]; grupos=[(PRED:f056f99d, EVT:2685); (RETRO:aa000001, RETRO:aa000002, RETRO:aa000003, RETRO:aa000004)]; \"tipo\" de los eventos en la respuesta: [2684:DIAGNOSTICO, 2685:CONTROL_PREVENTIVO, 2686:TRATAMIENTO]",
+    "OBS-8 (navegador real): texto al pasar el ratón sobre cada marcador de evento. LINEAL: [2684: \"25/10/26, 12:06 a. m. · Evento 2684 · Vet QA · Diferencia: 10 h\"; 2685: \"26/10/26, 4:36 p. m. · Evento 2685 · Vet QA\"; 2686: \"28/10/26, 3:06 p. m. · Evento 2686 · Vet QA\"]; AGRUPADO: [2684: \"25/10/26, 12:06 a. m. · Evento 2684 · Vet QA · Diferencia: 10 h\"; 2685: \"26/10/26, 4:36 p. m. · Evento 2685 · Vet QA\"; 2686: \"28/10/26, 3:06 p. m. · Evento 2686 · Vet QA\"]",
+    "OBS-4 (navegador real, Lineal): en la posición del grupo f056f99d/2685 siguen dibujados 2 punto(s) de la línea y 1 marcador(es) de evento por separado.",
+    "OBS-7 (navegador real, Agrupada): grupos listados=[\"2 eventos · 26/10/26, 4:06 p. m.Predicción · 26/10/26, 4:06 p. m.historialpredic\", \"4 eventos · 20/11/26, 10:08 a. m.Evaluación · 20/11/26, 10:08 a. m.Evaluación · \"]; etiquetas del grupo de CP-12=[\"Predicción\", \"historialpredictivo.tipo.CONTROL_PREVENTIVO\"]",
+    "Despliegue: bundle index-x5vi1C5p.js en http://127.0.0.1:4173/sigab-test/."
+  ],
+  "retirados": [],
+  "escrituras": [
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/",
+      "resultado": "al servidor (login 1)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+3a4,11
+> // Historial: 2026-11-22 Juan Sebastian Gutierrez - v1.1 reintento 1 (#706, INC-M08-385-G026). ADAPT-1: el indicador de
+> //   proceso aparece pasados 3 s (arreglo de G027, RF-107 8.5 paso 3): CP-09 y OBS-3 lo esperan hasta 5 s, ninguna
+> //   respuesta diferida queda sin resolver (afterEach) y CP-10 / CP-14 exigen como precondicion que no haya una operacion
+> //   en curso heredada. ADAPT-2: la meta del historial es "hora · estado[ · visible N s]"; CP-05 y CP-14 leen el estado
+> //   como su segundo campo. ADAPT-3: el icono de sincronizacion vive en el AppBar (M8-14); CP-10 monta esa estructura y
+> //   la precondicion literal de App.tsx y AppBar.tsx cambia. OBS-1, OBS-5, OBS-7a, OBS-8, OBS-9 y el obtenido de CP-17
+> //   reescritos (describian el codigo anterior).
+> //   Checkpoints, esperados, fuentes y retirado sin cambios.
+32a41
+> import { operacionEnCurso } from '../../../../../src/shared/hooks/operacionEnCurso';
+133a143,146
+> // ADAPT-1 (reintento 1): toda respuesta diferida se resuelve al terminar su prueba (afterEach). Si una prueba falla
+> // antes de resolverla, la operacion de la vista (operacionEnCurso.ts, store de modulo) quedaria abierta y los
+> // ModalShell bloqueantes de las pruebas siguientes no se abririan.
+> const diferidasPendientes: Array<(r: Respuesta) => void> = [];
+138c151,158
+<   return { resolver: (r) => resolver(r) };
+---
+>   const fin = (r: Respuesta) => resolver(r);
+>   diferidasPendientes.push(fin);
+>   return { resolver: fin };
+> }
+> /** ADAPT-1: precondicion de las pruebas con modal critico: ninguna operacion en curso heredada de otra prueba. */
+> function sinOperacionHeredada(paso: string): void {
+>   const op = operacionEnCurso();
+>   precondiciones.push({ nombre: `Sin operacion en curso heredada de otra prueba al montar el modal critico (${paso})`, ok: op === null, detalle: op ?? 'ninguna' });
+166a187,188
+> /** ADAPT-2 (reintento 1): la meta de una fila del historial es "hora · estado[ · visible N s]"; el estado es el 2.o campo. */
+> const estadoDeMeta = (meta: string) => meta.split(' · ')[1] ?? '';
+271a294
+>   // ADAPT-3 (reintento 1): desde M8-14 el icono de sincronizacion va en el AppBar (estado={<EstadoSincronizacion />}).
+273,277c296,306
+<   const iMain = app.indexOf('</main>');
+<   const iSync = app.indexOf('<EstadoSincronizacion />');
+<   precondiciones.push({ nombre: 'App.tsx: <EstadoSincronizacion /> es hermano posterior de <main> dentro de ds-app-content',
+<     ok: app.includes('<div className="ds-app-content">') && iMain > 0 && iSync > iMain && app.indexOf('</div>', iMain) > iSync,
+<     detalle: `</main> en ${iMain}, <EstadoSincronizacion /> en ${iSync}` });
+---
+>   const iContent = app.indexOf('<div className="ds-app-content">');
+>   const iAppBar = app.indexOf('<AppBar', iContent);
+>   const iEstado = app.indexOf('estado={<EstadoSincronizacion />}');
+>   const iMain = app.indexOf('<main', iContent);
+>   precondiciones.push({ nombre: 'App.tsx: <EstadoSincronizacion /> va en el AppBar (estado=...), dentro de ds-app-content y antes de <main>; una sola vez',
+>     ok: iContent > 0 && iAppBar > iContent && iEstado > iAppBar && iMain > iEstado && app.split('<EstadoSincronizacion />').length === 2,
+>     detalle: `ds-app-content en ${iContent}, <AppBar en ${iAppBar}, estado={<EstadoSincronizacion />} en ${iEstado}, <main en ${iMain}` });
+>   const barra = readFileSync(join(RAIZ_FRONT, 'src/shared/design-system/AppBar.tsx'), 'utf8');
+>   precondiciones.push({ nombre: 'AppBar.tsx: header.ds-appbar > div.ds-appbar__right con {estado} como primer hijo',
+>     ok: /<header className="ds-appbar"[^>]*>[\s\S]*<div className="ds-appbar__right">\s*\{estado\}/.test(barra),
+>     detalle: '<header className="ds-appbar" ...> ... <div className="ds-appbar__right"> {estado}' });
+302,303c331,333
+< afterEach(() => {
+<   cleanup();
+---
+> afterEach(async () => {
+>   // ADAPT-1: se resuelve toda respuesta diferida pendiente y se deja correr el ciclo de eventos para que la vista cierre
+>   // su operacion en curso antes de desmontarla.
+304a335,339
+>   while (diferidasPendientes.length) diferidasPendientes.shift()!({ status: 500, data: cuerpoError('QA_FIN_DE_PRUEBA', 'Fin de la prueba.') });
+>   for (let i = 0; i < 20 && operacionEnCurso() !== null; i += 1) {
+>     await act(async () => { await new Promise((r) => setTimeout(r, 10)); });
+>   }
+>   cleanup();
+402c437
+<       if (!estados.some((e) => f.meta.endsWith(e))) fallos.push(`fila ${i + 1} sin estado reconocible "${f.meta}"`);
+---
+>       if (!estados.includes(estadoDeMeta(f.meta))) fallos.push(`fila ${i + 1} sin estado reconocible "${f.meta}"`);
+489c524,531
+<     await waitFor(() => expect(seccion.querySelector('.ds-proceso')).not.toBeNull());
+---
+>     // ADAPT-1: el indicador aparece pasados 3.000 ms (ProcesoEnCurso UMBRAL_PROCESO_MS); se espera hasta 5 s. Si no
+>     // aparece (defecto del producto), CP-09 queda en FALLA con lo medido, no "No alcanzado".
+>     const indicadorVisto = await waitFor(() => expect(seccion.querySelector('.ds-proceso')).not.toBeNull(), { timeout: 5_000 })
+>       .then(() => true, () => false);
+>     if (!indicadorVisto) {
+>       anotar('CP-09', false, `Indicador de proceso (.ds-proceso) no visible en 5.000 ms tras pulsar "Exportar en PDF"; POST /reportes enviados: ${peticiones.filter((p) => p === 'POST /reportes').length}`);
+>       expect(indicadorVisto, 'indicador de proceso no visible').toBe(true);
+>     }
+497c539
+<     observaciones.push(`OBS-9 (066 c): el error de la generacion se muestra como Alert dentro de la seccion "Generar un reporte" (ReportesPage.tsx:263-269), no en la zona global de avisos (.ds-toasts tenia ${banners('error').length} banners de error).`);
+---
+>     observaciones.push(`OBS-9 (066 c): el error de la generacion se muestra como Alert dentro de la seccion "Generar un reporte" (ReportesPage.tsx:272), no en la zona global de avisos (.ds-toasts tenia ${banners('error').length} banners de error).`);
+499c541
+<   });
+---
+>   }, 20_000);  // ADAPT-1: la prueba espera el indicador hasta 5 s; el limite por defecto de Vitest (5 s) la cortaria
+501a544,545
+>     sinOperacionHeredada('CP-10');
+>     // ADAPT-3: misma estructura que App.tsx / AppBar.tsx (verificada literal en las precondiciones).
+505a550,552
+>           <header className="ds-appbar" role="banner">
+>             <div className="ds-appbar__right"><EstadoSincronizacion /></div>
+>           </header>
+515d561
+<           <EstadoSincronizacion />
+533c579
+<     observaciones.push(`OBS-1 (066 d): con el modal critico abierto, el icono de sincronizacion ${inerte ? `queda dentro de un elemento inert (<${inerte.tagName.toLowerCase()}${inerte.className ? ` class="${inerte.className}"` : ''}>)` : 'no queda inert'}: no se puede pulsar ni lo ve el lector de pantalla (useModalA11y.ts:16-33, FUERA_DEL_INERT solo exime .ds-toasts). La 8.2 nivel 5 dice que nunca puede ser bloqueado, incluido el modal critico; el nivel 1 dice que el modal bloquea toda la interfaz. La oclusion visual se mide en la parte Playwright.`);
+---
+>     observaciones.push(`OBS-1 (066 d): con el modal critico abierto, el icono de sincronizacion ${inerte ? `queda dentro de un elemento inert (<${inerte.tagName.toLowerCase()}${inerte.className ? ` class="${inerte.className}"` : ''}>)` : 'no queda inert'}: no se puede pulsar ni lo ve el lector de pantalla (useModalA11y.ts:17, FUERA_DEL_INERT solo exime .ds-toasts y .session-expiration-warning; el icono va en el AppBar). La 8.2 nivel 5 dice que nunca puede ser bloqueado, incluido el modal critico; el nivel 1 dice que el modal bloquea toda la interfaz. La oclusion visual se mide en la parte Playwright.`);
+585a632
+>     sinOperacionHeredada('CP-14 a CP-20');
+648,649c695,696
+<       && fS.meta.includes(horaBogota('2026-11-20T09:00:00-05:00')) && fS.meta.endsWith('Se cerró solo')
+<       && fE.meta.includes(horaBogota('2026-11-20T09:00:10-05:00')) && fE.meta.endsWith('Cerrado por ti')
+---
+>       && fS.meta.includes(horaBogota('2026-11-20T09:00:00-05:00')) && estadoDeMeta(fS.meta) === 'Se cerró solo'
+>       && fE.meta.includes(horaBogota('2026-11-20T09:00:10-05:00')) && estadoDeMeta(fE.meta) === 'Cerrado por ti'
+673c720
+<     const panelDur = filas.some((f) => /duraci|\bms\b/i.test(f.texto));
+---
+>     const panelDur = filas.some((f) => /duraci|\bms\b|visible \d+ s/i.test(f.texto));
+697c744,745
+<     observaciones.push(`OBS-7a (065 c): el historial se abre en un dialogo (role=dialog, ModalShell "Avisos de esta sesión") con ${nAvisos} filas; la 8.3 pide un panel lateral. La posicion se mide en la parte Playwright.`);
+---
+>     const modalHist = screen.getByRole('dialog', { name: 'Avisos de esta sesión' }).closest('.ds-modal');
+>     observaciones.push(`OBS-7a (065 c): el historial se abre en ModalShell (role=dialog "Avisos de esta sesión") con ${nAvisos} filas; clase ds-modal--lateral: ${modalHist?.classList.contains('ds-modal--lateral') ? 'si' : 'no'}. La posicion (panel lateral de la 8.3) se mide en la parte Playwright (CP-23).`);
+727c775,777
+<     await waitFor(() => expect(document.querySelector('.ds-proceso')).not.toBeNull());
+---
+>     // ADAPT-1: el indicador aparece pasados 3.000 ms; se espera hasta 5 s (es una observacion: no lanza si no aparece).
+>     const indicadorObs = await waitFor(() => expect(document.querySelector('.ds-proceso')).not.toBeNull(), { timeout: 5_000 })
+>       .then(() => true, () => false);
+731c781
+<     observaciones.push(`OBS-3 (067 c): doble clic en "Exportar en PDF" -> ${posts} POST /reportes enviado(s); boton deshabilitado tras el primer clic: ${exportar.hasAttribute('disabled') || exportar.getAttribute('aria-disabled') === 'true' ? 'si' : 'no'}; aviso "Esta operación ya está en curso o fue ejecutada recientemente.": ${aviso ? 'si' : 'no'}. El texto es de FA-6 (version anterior); la 8.3 vigente no lo nombra.`);
+---
+>     observaciones.push(`OBS-3 (067 c): doble clic en "Exportar en PDF" -> ${posts} POST /reportes enviado(s); boton deshabilitado tras el primer clic: ${exportar.hasAttribute('disabled') || exportar.getAttribute('aria-disabled') === 'true' ? 'si' : 'no'}; aviso "Esta operación ya está en curso o fue ejecutada recientemente.": ${aviso ? 'si' : 'no'}. Indicador de proceso visible en 5 s: ${indicadorObs ? 'si' : 'no'}. El texto es de FA-6 (version anterior); la 8.3 vigente no lo nombra.`);
+733c783
+<   });
+---
+>   }, 20_000);  // ADAPT-1: la prueba espera el indicador hasta 5 s; el limite por defecto de Vitest (5 s) la cortaria
+745c795
+<     observaciones.push(`OBS-5: un exito reemplazado por otro queda en el historial con estado "${String(estadoA)}" (se muestra "Cerrado por ti" aunque el usuario no lo cerro; useToast.ts:125); un evento posterior con su id_operacion ${visiblesA.includes('Exito A') ? 'se muestra' : 'se descarta'} (visibles: [${visiblesA.join(', ')}]).`);
+---
+>     observaciones.push(`OBS-5: un exito reemplazado por otro queda en el historial con estado "${String(estadoA)}" (se muestra "Cerrado por ti" aunque el usuario no lo cerro; useToast.ts:153); un evento posterior con su id_operacion ${visiblesA.includes('Exito A') ? 'se muestra' : 'se descarta'} (visibles: [${visiblesA.join(', ')}]).`);
+758c808
+<     observaciones.push(`OBS-8: con 3 advertencias y 3 errores (0 visibles de error mas alla de las advertencias) el aviso de saturacion ${sat ? `aparece ("${norm(sat.textContent)}")` : 'no aparece'}; useToast.ts:78-80 cuenta advertencias y errores. La 8.3 habla de banners de error.`);
+---
+>     observaciones.push(`OBS-8: con 3 advertencias y 3 errores (0 visibles de error mas alla de las advertencias) el aviso de saturacion ${sat ? `aparece ("${norm(sat.textContent)}")` : 'no aparece'}; useToast.ts:106-108 (esPersistente) cuenta advertencias y errores. La 8.3 habla de banners de error.`);

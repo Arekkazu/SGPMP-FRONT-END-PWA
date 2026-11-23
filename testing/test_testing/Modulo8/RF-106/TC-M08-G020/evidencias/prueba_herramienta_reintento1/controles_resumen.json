@@ -1,0 +1,137 @@
+[
+  {
+    "control": "dominio_datos",
+    "exit": 1,
+    "fallas": [
+      "CP-05"
+    ],
+    "esperadas": [
+      "CP-05"
+    ],
+    "no_alcanzado": [],
+    "como_previsto": true,
+    "obtenidos_falla": {
+      "CP-05": "seleccion=ok; ejeX=[x1=88, x2=784]; p1: x=88.00, pos_rel_medida=0.0000 (esperada=0.8864); ultimo_marcador: x=784.00, pos_rel_medida=1.0000 (esperada=0.9298)"
+    }
+  },
+  {
+    "control": "evento_azul",
+    "exit": 1,
+    "fallas": [
+      "CP-02"
+    ],
+    "esperadas": [
+      "CP-02"
+    ],
+    "no_alcanzado": [],
+    "como_previsto": true,
+    "obtenidos_falla": {
+      "CP-02": "seleccion=ok; eventos=2; fills=[\"var(--info-600)\", \"var(--info-600)\"]; max_error_pos_rel=0.000000; x_ev2684=705.87, x_p2=705.87 (diff=0.00 px)"
+    }
+  },
+  {
+    "control": "evento_path_ronda1",
+    "exit": 0,
+    "fallas": [],
+    "esperadas": [],
+    "no_alcanzado": [],
+    "como_previsto": true,
+    "obtenidos_falla": {}
+  },
+  {
+    "control": "retro_en_su_fecha",
+    "exit": 1,
+    "fallas": [
+      "CP-02"
+    ],
+    "esperadas": [
+      "CP-02"
+    ],
+    "no_alcanzado": [],
+    "como_previsto": true,
+    "obtenidos_falla": {
+      "CP-02": "seleccion=ok; eventos=2; fills=[\"var(--sem-error)\", \"var(--sem-error)\"]; max_error_pos_rel=0.239521; x_ev2684=705.87, x_p2=705.87 (diff=0.00 px)"
+    }
+  },
+  {
+    "control": "iconos_cambiados",
+    "exit": 1,
+    "fallas": [
+      "CP-03"
+    ],
+    "esperadas": [
+      "CP-03"
+    ],
+    "no_alcanzado": [],
+    "como_previsto": true,
+    "obtenidos_falla": {
+      "CP-03": "seleccion=ok; valoraciones=4; textos_por_x=[\"✗\", \"✓\", \"◐\", \"○\"]"
+    }
+  },
+  {
+    "control": "sin_eventos_dibujados",
+    "exit": 1,
+    "fallas": [
+      "CP-02",
+      "CP-06",
+      "CP-08"
+    ],
+    "esperadas": [
+      "CP-02",
+      "CP-06",
+      "CP-08"
+    ],
+    "no_alcanzado": [],
+    "como_previsto": true,
+    "obtenidos_falla": {
+      "CP-02": "seleccion=ok; eventos=0; fills=[]; max_error_pos_rel=N/A; x_ev2684=NaN, x_p2=705.87 (diff=NaN px)",
+      "CP-06": "seleccion=ok; aviso_mensaje=true; sin_error=true; xAxis=true; yAxis=true; puntos=0; eventos=0; tvco=\"Sin datos suficientes para calcular\"; tras Desde=2026-01-01: peticion_fecha_inicio=2026-01-01, aviso_sigue_visible=true",
+      "CP-08": "seleccion=ok; aviso_parcial=true; detalle_retro=true (texto=\"Algunos datos no están disponibles en este momento Retroalimentación clínica\"); puntos=7; eventos=0; valoraciones=0; sin_error=true"
+    }
+  },
+  {
+    "control": "token_no_rojo",
+    "exit": 0,
+    "fallas": [
+      "CP-01",
+      "CP-02",
+      "CP-03",
+      "CP-04",
+      "CP-05",
+      "CP-06",
+      "CP-07",
+      "CP-08"
+    ],
+    "esperadas": [
+      "CP-01",
+      "CP-02",
+      "CP-03",
+      "CP-04",
+      "CP-05",
+      "CP-06",
+      "CP-07",
+      "CP-08"
+    ],
+    "no_alcanzado": [],
+    "como_previsto": true,
+    "obtenidos_falla": {
+      "CP-01": "Precondición no cumplida (tokens.css define --sem-error en rojo (todas sus definiciones)); medido: seleccion=ok; puntos=7; cy_por_x=[280, 212.5, 145, 77.5, 145, 212.5, 280]; niveles_deducidos=[0,1,2,3,2,1,0]; mismo_nivel_mismo_cy=true; mayor_nivel_menor_cy=tru",
+      "CP-02": "Precondición no cumplida (tokens.css define --sem-error en rojo (todas sus definiciones)); medido: seleccion=ok; eventos=2; fills=[\"var(--sem-error)\", \"var(--sem-error)\"]; max_error_pos_rel=0.000000; x_ev2684=705.87, x_p2=705.87 (diff=0.00 px)",
+      "CP-03": "Precondición no cumplida (tokens.css define --sem-error en rojo (todas sus definiciones)); medido: seleccion=ok; valoraciones=4; textos_por_x=[\"✓\", \"✗\", \"◐\", \"○\"]",
+      "CP-04": "Precondición no cumplida (tokens.css define --sem-error en rojo (todas sus definiciones)); medido: seleccion=ok; pendientes_medidos={p1: \"10/10/26, 10:00 a. m.\", p2: \"10/10/26, 10:00 p. m.\", p3: \"11/10/26, 12:00 a. m.\"}; esperados_bogota={p1: \"10/10/26, 10:00 ",
+      "CP-05": "Precondición no cumplida (tokens.css define --sem-error en rojo (todas sus definiciones)); medido: seleccion=ok; ejeX=[x1=88, x2=784]; p1: x=704.92, pos_rel_medida=0.8864 (esperada=0.8864); ultimo_marcador: x=735.11, pos_rel_medida=0.9298 (esperada=0.9298)",
+      "CP-06": "Precondición no cumplida (tokens.css define --sem-error en rojo (todas sus definiciones)); medido: seleccion=ok; aviso_mensaje=true; sin_error=true; xAxis=true; yAxis=true; puntos=0; eventos=1; tvco=\"Sin datos suficientes para calcular\"; tras Desde=2026-01-01:",
+      "CP-07": "Precondición no cumplida (tokens.css define --sem-error en rojo (todas sus definiciones)); medido: seleccion=ok; aviso_parcial=true; detalle_eventos=true (texto=\"Algunos datos no están disponibles en este momento Eventos sanitarios\"); puntos=7; valoraciones=4;",
+      "CP-08": "Precondición no cumplida (tokens.css define --sem-error en rojo (todas sus definiciones)); medido: seleccion=ok; aviso_parcial=true; detalle_retro=true (texto=\"Algunos datos no están disponibles en este momento Retroalimentación clínica\"); puntos=7; eventos=2;"
+    }
+  },
+  {
+    "control": "grupo_en_885",
+    "exit": 0,
+    "fallas": [],
+    "esperadas": [],
+    "no_alcanzado": [],
+    "como_previsto": true,
+    "obtenidos_falla": {}
+  }
+]

@@ -1,0 +1,707 @@
+// | Fecha      | Nombre                   | Que se hizo |
+// |------------|--------------------------|-------------|
+// | 2026-11-21 | Juan Sebastian Gutierrez | TC-M08-G024 (TC-M08-060; RF-106): rendimiento en Chromium y WebKit con respuestas simuladas; existencia de zoom/scroll y de paginación/virtualización v1 |
+// | 2026-11-22 | Juan Sebastian Gutierrez | v1.1 reintento 1 (#728): ADAPT-1, los puntos de la línea se cuentan con '.recharts-line-dots circle' (el arreglo dibuja cada punto con un <circle> propio, sin la clase recharts-dot); observación fija 2 reescrita; observación dinámica de avisos y botones con 2.000 marcadores. Checkpoints, esperados, fuentes y retirado sin cambios |
+//
+// QA SGPMP - Evaluacion (ronda 1). Navegador real (Chromium y WebKit) contra el frontend desplegado en TEST, cuenta
+// Veterinario 97, activo 885. Solo lectura: GET /historial-predictivo/885 se responde con respuestas sinteticas grandes
+// via context.route. Ninguna escritura.
+//
+// Reporte: JSON final propio en STAGING_DIR (resultado_TC-M08-G024[_reintentoN].json). Cada checkpoint arranca en FALLA "No alcanzado".
+import { test, expect, webkit, type Page, type BrowserContext, type Route, type Request, type Response } from '@playwright/test';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const TC = 'TC-M08-G024';
+const ACTIVO = 885;
+const BASE = (process.env.QA_FRONT_URL ?? 'https://api.inmero.co/sigab-test/').replace(/\/?$/, '/');
+const STAGING = process.env.STAGING_DIR ?? '';
+const REINTENTO = Number(process.env.REINTENTO ?? '0');
+const HORA_MS = 3_600_000;
+const DIA_MS = 24 * HORA_MS;
+
+type Estado = 'OK' | 'FALLA';
+type Escenario = '365d' | '1000' | '2000';
+interface Checkpoint { paso: string; caso: string; esperado: string; fuente: string; obtenido: string; estado: Estado }
+const CPS: Checkpoint[] = [
+  {
+    paso: 'CP-01',
+    caso: 'TC-M08-060, Chromium, 365 días (500 marcadores)',
+    esperado: 'La línea de tiempo queda dibujada completa (365 predicciones, 135 eventos y valoraciones) en <= 3.000 ms en cada una de 3 mediciones',
+    fuente: 'RF-106 CA-1; RNF-01',
+  },
+  {
+    paso: 'CP-02',
+    caso: 'TC-M08-060, Chromium, 1.000 eventos combinados',
+    esperado: 'La línea de tiempo queda dibujada completa (730 predicciones, 270 eventos y valoraciones) en <= 3.000 ms en cada una de 3 mediciones',
+    fuente: 'RF-106 RNF-01',
+  },
+  {
+    paso: 'CP-03',
+    caso: 'TC-M08-060, WebKit, 365 días',
+    esperado: 'La línea de tiempo queda dibujada completa (365 predicciones, 135 eventos y valoraciones) en <= 3.000 ms en cada una de 3 mediciones',
+    fuente: 'RF-106 CA-1; RNF-01; TC-M08-060 (Chromium y WebKit)',
+  },
+  {
+    paso: 'CP-04',
+    caso: 'TC-M08-060, WebKit, 1.000 eventos combinados',
+    esperado: 'La línea de tiempo queda dibujada completa (730 predicciones, 270 eventos y valoraciones) en <= 3.000 ms en cada una de 3 mediciones',
+    fuente: 'RF-106 RNF-01; TC-M08-060 (Chromium y WebKit)',
+  },
+  {
+    paso: 'CP-05',
+    caso: 'TC-M08-060, zoom y scroll (existencia)',
+    esperado: 'La gráfica ofrece zoom o desplazamiento: un Brush de recharts, la rueda del ratón cambia el rango del eje X, un contenedor con desplazamiento horizontal o botones de zoom',
+    fuente: 'RF-106 RNF-02 (solo existencia; decisión de Sebastian 2026-11-21)',
+  },
+  {
+    paso: 'CP-06',
+    caso: 'TC-M08-060, más de 1.000 eventos (2.000)',
+    esperado: 'Con 2.000 eventos la gráfica pagina (controles propios de la gráfica) o virtualiza (dibuja menos marcadores que los recibidos)',
+    fuente: 'RF-106 RNF-05 (solo existencia; decisión de Sebastian 2026-11-21)',
+  },
+].map((c) => ({ ...c, obtenido: 'No alcanzado', estado: 'FALLA' as Estado }));
+
+const RETIRADOS: Array<{ paso: string; motivo: string }> = [
+  {
+    paso: 'TC-M08-060: tiempo de carga con 365 días de historial real (backend incluido)',
+    motivo: 'TEST no tiene un activo con 365 días de historial; el caso pide respuestas simuladas. Se mide el frontend desplegado con la respuesta simulada (page.route); el tiempo real del backend con el 885 (24 predicciones) va como observación',
+  },
+];
+
+const precondiciones: Array<{ nombre: string; ok: boolean; detalle: string }> = [];
+const observaciones: string[] = [
+  'RNF-02 y RNF-05 no definen un criterio medible; CP-05 y CP-06 solo verifican la existencia del mecanismo (decisión de Sebastian, 2026-11-21).',
+  'El detalle por marcador al pasar el ratón (un <title> en cada marcador) se evalúa en G021 y G022 (corregido en sus reintentos 1); G024 no lo mide.',
+];
+const escrituras: Array<{ metodo: string; ruta: string; resultado: string }> = [];
+const violaciones: string[] = [];
+
+function anotar(paso: string, ok: boolean, obtenido: string): void {
+  const cp = CPS.find((c) => c.paso === paso)!;
+  cp.obtenido = obtenido;
+  cp.estado = ok ? 'OK' : 'FALLA';
+}
+function precondicion(nombre: string, ok: boolean, detalle: string): void {
+  precondiciones.push({ nombre, ok, detalle });
+  if (!ok) {
+    for (const c of CPS) { c.obtenido = `Precondición no cumplida (${nombre}): ${detalle}`; c.estado = 'FALLA'; }
+    throw new Error(`Precondicion falsa: ${nombre} (${detalle})`);
+  }
+}
+function captura(page: Page, nombre: string): Promise<unknown> {
+  if (!STAGING) return Promise.resolve();
+  return page.screenshot({
+    path: join(STAGING, `captura_${TC}_${nombre}.png`),
+    mask: [page.locator('.ds-appbar__right'), page.locator('.ds-sidebar__footer')],
+  });
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Guardia de escrituras (solo lectura)
+// ---------------------------------------------------------------------------------------------------------------
+let logins = 0;
+async function guardia(route: Route, req: Request): Promise<void> {
+  const metodo = req.method();
+  if (metodo === 'GET' || metodo === 'HEAD' || metodo === 'OPTIONS') return route.continue();
+  const url = new URL(req.url());
+  const ruta = url.pathname;
+  if (/googleapis\.com|gstatic\.com|firebaseio\.com|firebase\.com/.test(url.hostname)) {
+    escrituras.push({ metodo, ruta: `${url.hostname}${ruta}`, resultado: 'abortada (host externo)' });
+    return route.abort();
+  }
+  if (metodo === 'POST' && /\/sesiones\/?$/.test(ruta)) {
+    logins += 1;
+    escrituras.push({ metodo, ruta, resultado: `al servidor (login ${logins})` });
+    if (logins > 1) { violaciones.push(`segundo login (${ruta})`); return route.abort(); }
+    return route.continue();
+  }
+  if ((metodo === 'POST' && /\/sesiones\/refresh\/?$/.test(ruta)) || (metodo === 'DELETE' && /\/sesiones\/?$/.test(ruta))) {
+    escrituras.push({ metodo, ruta, resultado: 'al servidor (sesion)' });
+    return route.continue();
+  }
+  if (metodo === 'POST' && /\/usuarios\/me\/fcm-token\/?$/.test(ruta)) {
+    escrituras.push({ metodo, ruta, resultado: 'abortada (registro de push)' });
+    return route.abort();
+  }
+  escrituras.push({ metodo, ruta, resultado: 'ABORTADA (no permitida)' });
+  violaciones.push(`${metodo} ${ruta}`);
+  return route.abort();
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Generador determinista de respuestas grandes de /historial-predictivo/885
+// ---------------------------------------------------------------------------------------------------------------
+const norm = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+const ms = (s: string) => new Date(s).getTime();
+const iso = (t: number) => new Date(t).toISOString().replace('.000Z', '+00:00');
+
+const SPEC_ESC: Record<Escenario, { e: number; h: number; nPred: number; nEv: number; nRet: number }> = {
+  '365d': { e: 1, h: 24, nPred: 365, nEv: 60, nRet: 75 },
+  '1000': { e: 2, h: 12, nPred: 730, nEv: 120, nRet: 150 },
+  '2000': { e: 3, h: 6, nPred: 1460, nEv: 240, nRet: 300 },
+};
+
+let AHORA_TEST = Math.floor(Date.now() / HORA_MS) * HORA_MS;
+let escenarioActual: Escenario | null = null;
+const simulados: Record<Escenario, number> = { '365d': 0, '1000': 0, '2000': 0 };
+
+function generar(esc: Escenario, params: URLSearchParams): Record<string, unknown> {
+  const { e, h, nPred, nEv, nRet } = SPEC_ESC[esc];
+  const INICIO = AHORA_TEST - 365 * DIA_MS + HORA_MS;
+  const nivelesPatron = [0, 0, 1, 1, 2, 3, 2, 1];
+  const tiposEv = ['DIAGNOSTICO', 'CONTROL_PREVENTIVO', 'TRATAMIENTO'];
+  const valsRet = ['CORRECTO', 'INCORRECTO', 'PARCIAL', 'SIN_EVENTO'];
+
+  const predId = (i: number) => `${e}24${String(i).padStart(5, '0')}-0000-4000-8000-${String(i).padStart(12, '0')}`;
+  const predT = (i: number) => INICIO + i * h * HORA_MS;
+
+  const conRetro = new Set<number>();
+  const retroalimentaciones: Array<Record<string, unknown>> = [];
+  let correctas = 0;
+  for (let r = 0; r < nRet; r += 1) {
+    const j = Math.floor((r * nPred) / nRet);
+    conRetro.add(j);
+    const valoracion = valsRet[r % 4];
+    if (valoracion === 'CORRECTO') correctas += 1;
+    retroalimentaciones.push({
+      tipo: 'RETROALIMENTACION',
+      fecha: iso(predT(j) + Math.round(0.7 * h * HORA_MS)),
+      id_resultado_inferencia: predId(j),
+      valoracion,
+      veterinario: 'QA Vet',
+      observaciones: null,
+      en_conflicto: false,
+    });
+  }
+
+  const predicciones: Array<{ t: number; nivel: number; id: string; condicion: string; obj: Record<string, unknown> }> = [];
+  for (let i = 0; i < nPred; i += 1) {
+    const t = predT(i);
+    const nivel = nivelesPatron[i % 8];
+    const id = predId(i);
+    const condicion = `Condición QA ${i}`;
+    predicciones.push({
+      t,
+      nivel,
+      id,
+      condicion,
+      obj: {
+        tipo: 'PREDICCION',
+        fecha: iso(t),
+        id_resultado_inferencia: id,
+        nivel_riesgo: nivel,
+        confianza: 0.85,
+        condicion,
+        modo_sombra: false,
+        tiene_retroalimentacion: conRetro.has(i),
+        en_conflicto: false,
+      },
+    });
+  }
+
+  const eventos: Array<{ t: number; id_evento: number; obj: Record<string, unknown> }> = [];
+  for (let k = 0; k < nEv; k += 1) {
+    const j = Math.floor((k * nPred) / nEv);
+    const t = predT(j) + Math.round(0.4 * h * HORA_MS);
+    const idEv = 900000 + k;
+    eventos.push({
+      t,
+      id_evento: idEv,
+      obj: {
+        tipo: tiposEv[k % 3],
+        fecha: iso(t),
+        id_evento: idEv,
+        descripcion: `Evento QA ${k}`,
+        veterinario: 'QA Vet',
+      },
+    });
+  }
+
+  const ventanaMs = 12 * HORA_MS;
+  const correspondencias: Array<Record<string, unknown>> = [];
+  for (const p of predicciones) {
+    for (const ev of eventos) {
+      const delta = Math.abs(ev.t - p.t);
+      if (delta <= ventanaMs) {
+        const minutos = Math.floor(delta / 60_000);
+        const hh = Math.floor(minutos / 60);
+        const mm = minutos % 60;
+        correspondencias.push({
+          id_resultado_inferencia: p.id,
+          id_evento: ev.id_evento,
+          diferencia_minutos: minutos,
+          diferencia: `Diferencia: ${hh} h${mm ? ` ${mm} min` : ''}`,
+          colision: false,
+        });
+      }
+    }
+  }
+
+  const porcentaje = Math.round((correctas / nRet) * 10000) / 100;
+  const tasaError = Math.round((100 - porcentaje) * 100) / 100;
+  const tvco = {
+    porcentaje,
+    texto: `${porcentaje}% (${nRet} validadas; ${nPred - nRet} excluidas: sin retro)`,
+    tvco_denominador: nRet,
+    tvco_excluidas_conflicto: 0,
+    excluidas_sin_retroalimentacion: nPred - nRet,
+    tasa_error: tasaError,
+  };
+
+  const pendList = predicciones
+    .filter((p, i) => !conRetro.has(i) && AHORA_TEST - p.t > 48 * HORA_MS)
+    .sort((a, b) => (b.nivel - a.nivel) || (b.t - a.t));
+
+  return {
+    activo: {
+      id_activo_biologico: ACTIVO,
+      identificador: 'QA-G88-266-IND-001',
+      especie: 'Qa Semaforo Dinamico',
+      finca: 'Finca Prueba Alfa',
+      estado: 'ACTIVO',
+    },
+    rango_fechas_aplicado: {
+      fecha_inicio: params.get('fecha_inicio'),
+      fecha_fin: params.get('fecha_fin'),
+    },
+    ventana_correspondencia_horas: 12,
+    predicciones: predicciones.map((p) => p.obj),
+    eventos_sanitarios: eventos.map((ev) => ev.obj),
+    retroalimentaciones,
+    grupos: [],
+    correspondencias,
+    tvco,
+    pendientes: {
+      total: pendList.length,
+      pagina: 1,
+      por_pagina: 20,
+      items: pendList.slice(0, 20).map((p) => ({
+        id_resultado_inferencia: p.id,
+        fecha_inferencia: iso(p.t),
+        nivel_riesgo: p.nivel,
+        condicion: p.condicion,
+      })),
+    },
+    metadatos: {
+      total_inferencias: nPred,
+      total_eventos_sanitarios: nEv,
+      total_retroalimentaciones: nRet,
+      total_pendientes: pendList.length,
+      total_conflictos: 0,
+    },
+    fuentes_no_disponibles: [],
+    mensaje: null,
+    modo_visualizacion: params.get('modo_visualizacion') ?? 'LINEAL',
+  };
+}
+
+async function simularHistorial(route: Route, req: Request): Promise<void> {
+  if (req.method() !== 'GET' || escenarioActual === null) return route.fallback();
+  const url = new URL(req.url());
+  const esc = escenarioActual;
+  simulados[esc] += 1;
+  return route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(generar(esc, url.searchParams)),
+  });
+}
+
+async function registrarRutas(ctx: BrowserContext): Promise<void> {
+  await ctx.route('**/*', guardia);
+  await ctx.route((url) => new RegExp(`/historial-predictivo/${ACTIVO}$`).test(url.pathname), simularHistorial);
+}
+
+interface Medicion {
+  ms: number | null;
+  Lp: number;
+  Sp: number;
+  L: number;
+  S: number;
+  completo: boolean;
+  httpStatus?: number;
+  getDuracionMs?: number | null;
+}
+
+function mediana(vals: number[]): number {
+  const s = [...vals].sort((a, b) => a - b);
+  return s[Math.floor(s.length / 2)];
+}
+
+async function medir(page: Page, esc: Escenario | null, etiqueta: string): Promise<Medicion> {
+  const promOpc = page.waitForResponse(
+    (r) => /\/reportes\/opciones\/activo/.test(r.url()) && r.request().method() === 'GET',
+    { timeout: 30_000 },
+  ).catch(() => null);
+  await page.goto(`${BASE}prediccion/historial-predictivo`);
+  await promOpc;
+  escenarioActual = esc;
+
+  const combo = page.getByRole('combobox', { name: 'Animal o lote' });
+  const opcionLista = page.getByRole('option', { name: etiqueta, exact: true });
+
+  if (esc === null) {
+    const promResp = page.waitForResponse(
+      (r) => new RegExp(`/historial-predictivo/${ACTIVO}\\?`).test(r.url())
+        && r.url().includes('modo_visualizacion=LINEAL')
+        && r.request().method() === 'GET',
+      { timeout: 30_000 },
+    ).catch(() => null);
+    await combo.fill(etiqueta);
+    const t0 = Date.now();
+    if (await opcionLista.count()) await opcionLista.first().click();
+    const resp = await promResp;
+    if (!resp) return { ms: null, Lp: 0, Sp: 0, L: 0, S: 0, completo: false, httpStatus: 0, getDuracionMs: null };
+    const status = resp.status();
+    const timing = resp.request().timing();
+    const getDuracionMs = timing.responseEnd > 0 && timing.requestStart >= 0
+      ? Math.round(timing.responseEnd - timing.requestStart)
+      : null;
+    if (status !== 200) return { ms: null, Lp: 0, Sp: 0, L: 0, S: 0, completo: false, httpStatus: status, getDuracionMs };
+    const body = (await resp.json()) as {
+      predicciones: unknown[];
+      eventos_sanitarios: unknown[];
+      retroalimentaciones: unknown[];
+    };
+    const L = body.predicciones.length;
+    const S = body.eventos_sanitarios.length + body.retroalimentaciones.length;
+    await page.evaluate(({ expL, expS }) => {
+      const w = window as unknown as { __qaFin: number | null };
+      w.__qaFin = null;
+      const tick = () => {
+        const l = document.querySelectorAll('.recharts-line-dots circle').length;
+        const s = document.querySelectorAll('.recharts-scatter-symbol').length;
+        const cargando = (document.body.textContent ?? '').includes('Cargando historial...');
+        if (l === expL && s === expS && !cargando) { w.__qaFin = Date.now(); return; }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }, { expL: L, expS: S });
+    await page.waitForFunction(() => (window as unknown as { __qaFin: number | null }).__qaFin !== null, { timeout: 30_000 }).catch(() => null);
+    const res = await page.evaluate(() => ({
+      fin: (window as unknown as { __qaFin: number | null }).__qaFin,
+      Lp: document.querySelectorAll('.recharts-line-dots circle').length,
+      Sp: document.querySelectorAll('.recharts-scatter-symbol').length,
+    }));
+    return {
+      ms: res.fin !== null ? Math.max(0, res.fin - t0) : null,
+      Lp: res.Lp,
+      Sp: res.Sp,
+      L,
+      S,
+      completo: res.fin !== null && res.Lp === L && res.Sp === S,
+      httpStatus: status,
+      getDuracionMs,
+    };
+  }
+
+  const spec = SPEC_ESC[esc];
+  const L = spec.nPred;
+  const S = spec.nEv + spec.nRet;
+
+  if (esc === '2000') {
+    await combo.fill(etiqueta);
+    const t0 = Date.now();
+    if (await opcionLista.count()) await opcionLista.first().click();
+    await expect(page.getByText('Cargando historial...')).toHaveCount(0, { timeout: 30_000 }).catch(() => undefined);
+    let prev = -1;
+    let estables = 0;
+    let Lp = 0;
+    let Sp = 0;
+    const limite = t0 + 30_000;
+    while (Date.now() < limite) {
+      await page.waitForTimeout(500);
+      const cur = await page.evaluate(() => ({
+        Lp: document.querySelectorAll('.recharts-line-dots circle').length,
+        Sp: document.querySelectorAll('.recharts-scatter-symbol').length,
+        cargando: (document.body.textContent ?? '').includes('Cargando historial...'),
+      }));
+      Lp = cur.Lp;
+      Sp = cur.Sp;
+      const total = Lp + Sp;
+      if (!cur.cargando && total > 0 && total === prev) {
+        estables += 1;
+        if (estables >= 2) break;
+      } else {
+        estables = 0;
+      }
+      prev = total;
+    }
+    return { ms: Date.now() - t0, Lp, Sp, L, S, completo: Lp === L && Sp === S };
+  }
+
+  await page.evaluate(({ expL, expS }) => {
+    const w = window as unknown as { __qaFin: number | null };
+    w.__qaFin = null;
+    const tick = () => {
+      const l = document.querySelectorAll('.recharts-line-dots circle').length;
+      const s = document.querySelectorAll('.recharts-scatter-symbol').length;
+      const cargando = (document.body.textContent ?? '').includes('Cargando historial...');
+      if (l === expL && s === expS && !cargando) { w.__qaFin = Date.now(); return; }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, { expL: L, expS: S });
+
+  await combo.fill(etiqueta);
+  const t0 = Date.now();
+  if (await opcionLista.count()) await opcionLista.first().click();
+  await page.waitForFunction(() => (window as unknown as { __qaFin: number | null }).__qaFin !== null, { timeout: 30_000 }).catch(() => null);
+  const res = await page.evaluate(() => ({
+    fin: (window as unknown as { __qaFin: number | null }).__qaFin,
+    Lp: document.querySelectorAll('.recharts-line-dots circle').length,
+    Sp: document.querySelectorAll('.recharts-scatter-symbol').length,
+  }));
+  return {
+    ms: res.fin !== null ? Math.max(0, res.fin - t0) : null,
+    Lp: res.Lp,
+    Sp: res.Sp,
+    L,
+    S,
+    completo: res.fin !== null && res.Lp === L && res.Sp === S,
+  };
+}
+
+function resumirTres(meds: Medicion[], nav: string): { ok: boolean; obtenido: string } {
+  const completas = meds.filter((m) => m.completo).length;
+  const tiempos = meds.map((m) => m.ms);
+  const validos = tiempos.filter((x): x is number => x !== null);
+  const med = validos.length ? mediana(validos) : null;
+  const ultima = meds[meds.length - 1];
+  const ok = completas === 3 && meds.every((m) => m.ms !== null && m.ms <= 3000);
+  const obtenido = `mediciones=[${tiempos.map((x) => (x === null ? 'timeout' : x)).join(', ')}] ms (mediana ${med ?? 'N/A'}), completas=${completas}/3, ${ultima.Lp}/${ultima.L}, ${ultima.Sp}/${ultima.S}, navegador=${nav}`;
+  return { ok, obtenido };
+}
+
+test.afterAll(() => {
+  if (violaciones.length) precondiciones.push({ nombre: 'Ninguna escritura no permitida hacia TEST', ok: false, detalle: violaciones.join('; ') });
+  else precondiciones.push({ nombre: 'Ninguna escritura no permitida hacia TEST', ok: true, detalle: `${escrituras.length} peticiones distintas de GET, todas permitidas` });
+  if (precondiciones.some((p) => !p.ok)) {
+    const nombres = precondiciones.filter((p) => !p.ok).map((p) => p.nombre).join('; ');
+    for (const c of CPS) if (!c.obtenido.startsWith('Precondición no cumplida')) { c.obtenido = `Precondición no cumplida (${nombres}); medido: ${c.obtenido}`; c.estado = 'FALLA'; }
+  }
+  const ok = CPS.filter((c) => c.estado === 'OK').length;
+  const reporte = {
+    tc: TC,
+    reintento: REINTENTO,
+    run_id: process.env.RUN_ID ?? '',
+    fecha: new Date().toISOString(),
+    ambiente: BASE,
+    summary: { total: CPS.length, ok, falla: CPS.length - ok, veredicto: ok === CPS.length ? 'Aprobado' : 'Rechazado' },
+    checkpoints: CPS,
+    observaciones,
+    retirados: RETIRADOS,
+    precondiciones,
+    escrituras,
+  };
+  if (!STAGING) return;
+  mkdirSync(STAGING, { recursive: true });
+  writeFileSync(join(STAGING, `resultado_${TC}${REINTENTO > 0 ? `_reintento${REINTENTO}` : ''}.json`), `${JSON.stringify(reporte, null, 2)}\n`, 'utf8');
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Recorrido unico (un solo login; Chromium luego WebKit por cookie de refresco)
+// ---------------------------------------------------------------------------------------------------------------
+test('TC-M08-G024 rendimiento Chromium y WebKit (CP-01 a CP-06)', async ({ page, context, browser }) => {
+  test.setTimeout(900_000);
+  AHORA_TEST = Math.floor(Date.now() / HORA_MS) * HORA_MS;
+  const chromiumNav = `Chromium ${browser.version()}`;
+
+  const correo = process.env.QA_VET_EMAIL ?? '';
+  const clave = process.env.QA_VET_PASSWORD ?? '';
+  precondicion('Credenciales del Veterinario en memoria', correo.length > 3 && clave.length > 3, 'QA_VET_EMAIL / QA_VET_PASSWORD presentes');
+
+  const scripts: Array<{ nombre: string; cuerpo: string }> = [];
+  page.on('response', async (r) => {
+    if (r.request().resourceType() !== 'script') return;
+    try { scripts.push({ nombre: new URL(r.url()).pathname.split('/').pop() ?? '', cuerpo: await r.text() }); } catch { /* recurso sin cuerpo */ }
+  });
+
+  await registrarRutas(context);
+
+  // -- A. Login en Chromium (una sola vez)
+  await page.goto(`${BASE}login`);
+  await page.locator('input[autocomplete="email"]').fill(correo);
+  await page.locator('input[autocomplete="current-password"]').fill(clave);
+  await page.getByRole('button', { name: 'Ingresar' }).click();
+  await page.waitForURL((u) => !u.pathname.endsWith('/login'), { timeout: 30_000 }).catch(() => undefined);
+  precondicion('Login del Veterinario 97 (una sola vez)', !page.url().endsWith('/login'), `URL tras el login: ${new URL(page.url()).pathname}`);
+
+  // Obtener etiqueta del activo 885
+  const promOpc0 = page.waitForResponse((r) => /\/reportes\/opciones\/activo/.test(r.url()) && r.request().method() === 'GET', { timeout: 30_000 });
+  await page.goto(`${BASE}prediccion/historial-predictivo`);
+  const opciones = (await (await promOpc0).json()) as Array<{ valor: number; etiqueta: string }>;
+  const opcion = opciones.find((o) => Number(o.valor) === ACTIVO);
+  precondicion(`El activo ${ACTIVO} figura entre los animales o lotes del Veterinario`, !!opcion, `${opciones.length} opciones`);
+  const etiqueta = opcion!.etiqueta;
+
+  // -- A.1 Real (885 sin simular)
+  const m0 = await medir(page, null, etiqueta);
+  precondicion(`GET real /historial-predictivo/${ACTIVO} responde 200`, m0.httpStatus === 200, `HTTP ${m0.httpStatus}`);
+  observaciones.push(`885 real: ${m0.Lp}/${m0.L} predicciones y ${m0.Sp}/${m0.S} eventos+valoraciones, dibujado=${m0.ms ?? 'timeout'} ms, duración GET=${m0.getDuracionMs ?? 'N/A'} ms.`);
+
+  // -- A.2 CP-01 (365d x3) y CP-02 (1000 x3) en Chromium
+  const meds01: Medicion[] = [];
+  for (let k = 0; k < 3; k += 1) meds01.push(await medir(page, '365d', etiqueta));
+  const r01 = resumirTres(meds01, chromiumNav);
+  anotar('CP-01', r01.ok, r01.obtenido);
+
+  const meds02: Medicion[] = [];
+  for (let k = 0; k < 3; k += 1) meds02.push(await medir(page, '1000', etiqueta));
+  const r02 = resumirTres(meds02, chromiumNav);
+  anotar('CP-02', r02.ok, r02.obtenido);
+  await page.getByRole('button', { name: 'Exportar historial sanitario (PDF)' }).click();
+  await page.waitForTimeout(1000);
+
+  precondicion(
+    'Respuestas simuladas servidas en Chromium (365d=3, 1000=3)',
+    simulados['365d'] === 3 && simulados['1000'] === 3,
+    `365d=${simulados['365d']}, 1000=${simulados['1000']}`,
+  );
+
+  // -- A.3 CP-05: zoom y scroll (con '1000' ya dibujado)
+  const leerZoomBase = () => page.evaluate(() => {
+    const n = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+    const h3 = Array.from(document.querySelectorAll('h3')).find((el) => n(el.textContent) === 'Línea de tiempo');
+    const card = h3?.parentElement;
+    if (!card) return { brush: 0, botonesZoom: 0, scrollHorizontal: 0, etiquetas: [] as string[], box: null as { x: number; y: number; width: number; height: number } | null };
+    const brush = card.querySelectorAll('.recharts-brush').length;
+    const reZoom = /zoom|acercar|alejar|ampliar|reducir/i;
+    const botonesZoom = Array.from(card.querySelectorAll('button, [role="button"]'))
+      .filter((el) => reZoom.test(n(el.textContent)) || reZoom.test(el.getAttribute('aria-label') ?? ''))
+      .length;
+    const scrollHorizontal = [card, ...Array.from(card.querySelectorAll('*'))].filter((el) => {
+      const st = getComputedStyle(el);
+      return (st.overflowX === 'auto' || st.overflowX === 'scroll') && el.scrollWidth > el.clientWidth + 1;
+    }).length;
+    let etEls = Array.from(card.querySelectorAll('.recharts-xAxis-tick-labels text'));
+    if (etEls.length === 0) etEls = Array.from(card.querySelectorAll('.recharts-xAxis text'));
+    const etiquetas = etEls.map((e) => n(e.textContent)).filter(Boolean);
+    const area = card.querySelector('.recharts-cartesian-grid') ?? card.querySelector('.recharts-surface');
+    const rect = area ? area.getBoundingClientRect() : null;
+    const box = rect && rect.width > 0 && rect.height > 0 ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null;
+    return { brush, botonesZoom, scrollHorizontal, etiquetas, box };
+  });
+
+  const zAntes = await leerZoomBase();
+  if (zAntes.box) {
+    await page.mouse.move(zAntes.box.x + zAntes.box.width / 2, zAntes.box.y + zAntes.box.height / 2);
+    await page.mouse.wheel(0, -600);
+    await page.waitForTimeout(600);
+  }
+  const zDespues = await leerZoomBase();
+  const etiquetasCambian = zAntes.etiquetas.length > 0 && JSON.stringify(zAntes.etiquetas) !== JSON.stringify(zDespues.etiquetas);
+  const ok05 = zAntes.brush > 0 || zAntes.botonesZoom > 0 || zAntes.scrollHorizontal > 0 || etiquetasCambian;
+  anotar(
+    'CP-05',
+    ok05,
+    `brush=${zAntes.brush}, botones_zoom=${zAntes.botonesZoom}, scroll_horizontal=${zAntes.scrollHorizontal}, etiquetas_cambian=${etiquetasCambian}, antes=[${zAntes.etiquetas.slice(0, 8).join(', ')}], despues=[${zDespues.etiquetas.slice(0, 8).join(', ')}]`,
+  );
+
+  // Observacion de hover (20 movimientos sobre el area de trazado)
+  if (zAntes.box) {
+    const hoverMs: number[] = [];
+    const yMid = zAntes.box.y + zAntes.box.height / 2;
+    for (let i = 0; i < 20; i += 1) {
+      const x = zAntes.box.x + ((i + 0.5) / 20) * zAntes.box.width;
+      const h0 = Date.now();
+      await page.mouse.move(x, yMid);
+      await page.evaluate(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
+      hoverMs.push(Date.now() - h0);
+    }
+    observaciones.push(`Hover (20 movimientos en Chromium con 1.000 eventos): mediana=${mediana(hoverMs)} ms, maximo=${Math.max(...hoverMs)} ms.`);
+  }
+  await captura(page, 'chromium_1000');
+
+  // -- A.4 CP-06: 2.000 eventos
+  const m2000 = await medir(page, '2000', etiqueta);
+  precondicion('Respuesta simulada 2000 servida en Chromium', simulados['2000'] === 1, `2000=${simulados['2000']}`);
+  const pagGrafica = await page.evaluate(() => {
+    const n = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+    const h3Linea = Array.from(document.querySelectorAll('h3')).find((el) => n(el.textContent) === 'Línea de tiempo');
+    const cardLinea = h3Linea?.parentElement;
+    const h3Pend = Array.from(document.querySelectorAll('h3')).find((el) => n(el.textContent) === 'Predicciones sin evaluar (más de 48 horas)');
+    const cardPend = h3Pend?.parentElement;
+    if (!cardLinea) return [] as string[];
+    const rePag = /anterior|siguiente|página|pagina|cargar|más|mas/i;
+    return Array.from(cardLinea.querySelectorAll('button, [role="button"]'))
+      .filter((b) => (!cardPend || !cardPend.contains(b)) && rePag.test(n(b.textContent)))
+      .map((b) => n(b.textContent));
+  });
+  // Observación (reintento 1): avisos de la gráfica y estado de los botones de la línea de tiempo con 2.000 marcadores.
+  const estado2000 = await page.evaluate(() => {
+    const n = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
+    const h3 = Array.from(document.querySelectorAll('h3')).find((el) => n(el.textContent) === 'Línea de tiempo');
+    const card = h3?.parentElement;
+    if (!card) return { avisos: [] as string[], botones: [] as string[] };
+    const avisos = Array.from(card.querySelectorAll('[role="status"]')).map((el) => n(el.textContent)).filter(Boolean);
+    const grupo = card.querySelector('[role="group"]');
+    const botones = grupo
+      ? Array.from(grupo.querySelectorAll('button')).map((b) => `${n(b.textContent)}${(b as HTMLButtonElement).disabled ? ' (deshabilitado)' : ''}`)
+      : [];
+    return { avisos, botones };
+  });
+  observaciones.push(`Con 2.000 marcadores: avisos de la gráfica=${JSON.stringify(estado2000.avisos)}; botones de la línea de tiempo=${JSON.stringify(estado2000.botones)}.`);
+  const dibujados = m2000.Lp + m2000.Sp;
+  const ok06 = dibujados < 2000 || pagGrafica.length > 0;
+  anotar(
+    'CP-06',
+    ok06,
+    `dibujados=${dibujados} de recibidos=2000 (${m2000.Lp}/1460, ${m2000.Sp}/540), paginador=${pagGrafica.length} [${pagGrafica.join(', ')}]`,
+  );
+
+  // -- A.5 Guardar storageState y cerrar contexto Chromium ANTES de lanzar WebKit
+  const estado = await context.storageState();
+  await page.goto('about:blank');
+  await context.close();
+
+  // -- B. WebKit (sin nuevo login; sesion via cookie de refresco)
+  const wb = await webkit.launch();
+  const webkitNav = `WebKit ${wb.version()}`;
+  observaciones.push(`WebKit versión: ${wb.version()}.`);
+  const ctxW = await wb.newContext({
+    storageState: estado,
+    serviceWorkers: 'block',
+    viewport: { width: 1366, height: 768 },
+    locale: 'es-CO',
+    timezoneId: 'America/Bogota',
+  });
+  await registrarRutas(ctxW);
+  const pW = await ctxW.newPage();
+  try {
+    escenarioActual = null;
+    await pW.goto(`${BASE}prediccion/historial-predictivo`);
+    await pW.waitForTimeout(2_000);
+    precondicion('Sesión activa en WebKit sin nuevo login', !pW.url().endsWith('/login'), `URL en WebKit: ${new URL(pW.url()).pathname}`);
+
+    const meds03: Medicion[] = [];
+    for (let k = 0; k < 3; k += 1) meds03.push(await medir(pW, '365d', etiqueta));
+    const r03 = resumirTres(meds03, webkitNav);
+    anotar('CP-03', r03.ok, r03.obtenido);
+
+    const meds04: Medicion[] = [];
+    for (let k = 0; k < 3; k += 1) meds04.push(await medir(pW, '1000', etiqueta));
+    const r04 = resumirTres(meds04, webkitNav);
+    anotar('CP-04', r04.ok, r04.obtenido);
+
+    await captura(pW, 'webkit_1000');
+  } finally {
+    await pW.goto('about:blank').catch(() => undefined);
+    await ctxW.close().catch(() => undefined);
+    await wb.close().catch(() => undefined);
+  }
+
+  // -- C. Precondicion del bundle (scripts recolectados en Chromium)
+  const todo = scripts.map((s) => s.cuerpo).join('\n');
+  const index = [...new Set(scripts.map((s) => s.nombre).filter((n) => /^index-.*\.js$/.test(n)))];
+  observaciones.push(`Despliegue: bundle ${index.join(', ') || '(no identificado)'} en ${BASE}.`);
+  precondicion(
+    'El frontend desplegado contiene "Línea de tiempo" y "Cargando historial..."',
+    todo.includes('Línea de tiempo') && todo.includes('Cargando historial...'),
+    `bundle: ${index.join(', ') || '(sin index-*.js)'}; ${scripts.length} scripts revisados`,
+  );
+
+  expect(violaciones, violaciones.join('; ')).toEqual([]);
+  expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+});

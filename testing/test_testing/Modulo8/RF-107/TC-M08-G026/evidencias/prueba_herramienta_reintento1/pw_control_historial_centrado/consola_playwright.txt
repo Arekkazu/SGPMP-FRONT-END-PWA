@@ -1,0 +1,29 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.pw.ts:148:1 › TC-M08-G026 parte navegador real (CP-21 a CP-24) (11.0s)
+
+
+  1) [chromium] › testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.pw.ts:148:1 › TC-M08-G026 parte navegador real (CP-21 a CP-24) 
+
+    Error: CP-23
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      310 |
+      311 |   expect(violaciones, violaciones.join('; ')).toEqual([]);
+    > 312 |   expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+          |                                                                                                                      ^
+      313 | });
+      314 |
+        at /home/claude/g024/fe/testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.pw.ts:312:118
+
+    Error Context: ../../g026/pr1/pw_control_historial_centrado/pw-salida/tc-m08-g026.pw.ts-TC-M08-G-5807d-vegador-real-CP-21-a-CP-24--chromium/error-context.md
+
+    Error Context: ../../g026/pr1/pw_control_historial_centrado/pw-salida/tc-m08-g026.pw.ts-TC-M08-G-5807d-vegador-real-CP-21-a-CP-24--chromium/error-context.md
+
+  1 failed
+    [chromium] › testing/test_testing/Modulo8/RF-107/TC-M08-G026/tc-m08-g026.pw.ts:148:1 › TC-M08-G026 parte navegador real (CP-21 a CP-24) 

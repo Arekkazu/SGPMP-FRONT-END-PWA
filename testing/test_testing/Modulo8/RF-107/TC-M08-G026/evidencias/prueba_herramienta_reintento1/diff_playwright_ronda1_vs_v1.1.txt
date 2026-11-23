@@ -1,0 +1,11 @@
+3a4,6
+> // Historial: 2026-11-22 Juan Sebastian Gutierrez - v1.1 reintento 1 (#706). ADAPT-4: las capturas enmascaran el avatar del
+> //   AppBar (.ds-appbar__avatar) y el pie del menu lateral (.ds-sidebar__footer), no toda la zona .ds-appbar__right, que
+> //   desde M8-14 contiene el icono de sincronizacion que mide CP-24. Checkpoints, esperados, fuentes y mediciones sin cambios.
+57c60,63
+<   return page.screenshot({ path: join(STAGING, `captura_${TC}_${nombre}.png`), mask: [page.locator('.ds-appbar__right')] });
+---
+>   return page.screenshot({
+>     path: join(STAGING, `captura_${TC}_${nombre}.png`),
+>     mask: [page.locator('.ds-appbar__avatar'), page.locator('.ds-sidebar__footer')],  // ADAPT-4
+>   });

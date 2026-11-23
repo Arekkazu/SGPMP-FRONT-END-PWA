@@ -1,0 +1,43 @@
+"""Segunda tanda del reintento 1 (Vitest G021): observaciones fijas que el arreglo dejo desactualizadas y OBS-9 medida."""
+import sys
+
+ruta = sys.argv[1]
+s = open(ruta, encoding='utf-8', newline='').read()
+
+CAMBIOS = [
+    (  # cabecera: se amplia la fila del reintento
+        "y texto propio del marcador \\\"N eventos\\\" sin su <title> (ADAPT-2) |\n".replace('\\"', '"'),
+        "y texto propio del marcador \"N eventos\" sin su <title> (ADAPT-2); OBS-5, OBS-6 y OBS-8 reescritas porque describian el codigo anterior, y OBS-9 nueva (titulos de los pares cuyo tooltip sigue retirado) |\n",
+    ),
+    (
+        "El texto lo arma el backend (historial_predictivo.py:101).`);",
+        "Reintento 1: la vista arma «Predicción del … y evento sanitario del …» (prediction.json, historialpredictivo.par) con la diferencia que envía el backend (historial_predictivo.py:101).`);",
+    ),
+    (
+        "    observaciones.push('OBS-6: la vista no usa el campo \"colision\" de las correspondencias (HistorialPredictivoView.tsx:261-266).');",
+        "    observaciones.push('OBS-6 (reintento 1): la vista usa ahora el campo \"colision\": dibuja el conector y pone la diferencia en el título solo para las correspondencias con colision=false (HistorialPredictivoView.tsx:199 y :217); un par en colisión va al marcador \"N eventos\".');",
+    ),
+    (
+        "    observaciones.push('OBS-8: en recharts 3.10 el ComposedChart solo admite tooltip por eje",
+        "    observaciones.push('OBS-8 (reintento 1): el arreglo quitó el Tooltip de recharts (a74c51cb); cada marcador lleva su propio <title> (HistorialPredictivoView.tsx:358, :364, :375 y :385), que el navegador muestra al pasar el ratón. Lo que ve el usuario se mide en navegador real (CP-14). Texto de la ronda 1: en recharts 3.10 el ComposedChart solo admite tooltip por eje",
+    ),
+    (  # OBS-9 en CP-04 (4001, Lineal): titulos de E1 a E5
+        "    anotar('CP-04', ok, obtenido);\n",
+        "    anotar('CP-04', ok, obtenido);\n"
+        "    // OBS-9 (reintento 1): el tooltip de 12 h 00, -10 h y 61 min sigue retirado (decision de la ronda 1); se mide el <title> como observacion.\n"
+        "    const titulos = leerMarcadoresEvento().map((e, k) => `E${k + 1}: \"${norm(e.el.querySelector('title')?.textContent)}\"`);\n"
+        "    observaciones.push(`OBS-9 (medida, 4001, Lineal; retirado como checkpoint): título de cada marcador de evento: [${titulos.join('; ')}]. Esperado por R5d para E2 \"Diferencia: 12 h\" y para E5 \"Diferencia: 10 h\".`);\n",
+    ),
+    (  # OBS-9 en CP-08 (4002): titulo de E8
+        "    anotar('CP-08', ok, obtenido);\n",
+        "    anotar('CP-08', ok, obtenido);\n"
+        "    const t8 = u.ok ? norm(leerMarcadoresEvento()[2]?.el.querySelector('title')?.textContent) : '(no medido)';\n"
+        "    observaciones.push(`OBS-9 (medida, 4002, Lineal; retirado como checkpoint): título del marcador de E8 (61 min) = \"${t8}\". Esperado por R5d: \"Diferencia: 1 h 1 min\".`);\n",
+    ),
+]
+for viejo, nuevo in CAMBIOS:
+    n = s.count(viejo)
+    assert n == 1, f'{n} apariciones de: {viejo[:100]!r}'
+    s = s.replace(viejo, nuevo)
+open(ruta, 'w', encoding='utf-8', newline='').write(s)
+print('ok', len(CAMBIOS), 'cambios')

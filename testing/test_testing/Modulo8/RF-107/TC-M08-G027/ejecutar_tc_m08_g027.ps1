@@ -1,6 +1,7 @@
 # | Fecha      | Nombre                   | Que se hizo |
 # |------------|--------------------------|-------------|
 # | 2026-11-21 | Juan Sebastian Gutierrez | Runner de TC-M08-G027 (RF-107, TC-M08-063 y TC-M08-064): Vitest en staging, JSON propio, sin tocar resultados\, escaneo al final con reescaneo. Base: runner de G025 |
+# | 2026-11-22 | Juan Sebastian Gutierrez | Reintento 1 (#730): 10 checkpoints (CP-04 pasa a observacion por decision de Sebastian), lista explicita de ids y operacionEnCurso.ts en la lista de SHA de src |
 #
 # Uso (desde la carpeta del caso, PowerShell 5.1):
 #   .\ejecutar_tc_m08_g027.ps1                (ronda 1)
@@ -11,14 +12,15 @@
 #
 # Codigos de salida:
 #   0 todos los checkpoints OK | 1 hay checkpoints FALLA (corrida valida) | 2 configuracion o precondicion local
-#   3 corrida invalida (JSON ausente, checkpoints distintos de 11, checkpoint no alcanzado, precondicion del spec
+#   3 corrida invalida (JSON ausente, checkpoints distintos de 10 (CP-01 a CP-03 y CP-05 a CP-11), checkpoint no alcanzado, precondicion del spec
 #     falsa o exit de Vitest incoherente) | 4 hallazgos en el escaneo de secretos | 6 resultados\ cambio durante la corrida
 param(
   [int]$Reintento = 0
 )
 $ErrorActionPreference = 'Stop'
 $tc = 'TC-M08-G027'
-$checkpointsEsperados = 11
+$checkpointsEsperados = 10
+$idsEsperados = @('CP-01', 'CP-02', 'CP-03', 'CP-05', 'CP-06', 'CP-07', 'CP-08', 'CP-09', 'CP-10', 'CP-11')
 $raiz = $PSScriptRoot
 $front = (Resolve-Path (Join-Path $raiz '..\..\..\..\..')).Path
 $spec = Join-Path $raiz 'tc-m08-g027.test.tsx'
@@ -81,7 +83,8 @@ $fuentes = @(
   'src\shared\i18n\locales\es-CO\common.json',
   'src\shared\i18n\locales\es-CO\reportes.json',
   'src\shared\i18n\locales\es-CO\finanzas.json',
-  'src\shared\i18n\locales\es-CO\integracion.json'
+  'src\shared\i18n\locales\es-CO\integracion.json',
+  'src\shared\hooks\operacionEnCurso.ts'
 )
 $shaFuentes = @()
 foreach ($f in $fuentes) {
@@ -140,10 +143,10 @@ if (-not (Test-Path $jsonRes)) {
   $cps = @($rep.checkpoints)
   if ($cps.Count -ne $checkpointsEsperados) { $invalida.Add("checkpoints = $($cps.Count), se esperaban $checkpointsEsperados") }
   $pasos = @($cps | ForEach-Object { $_.paso })
-  for ($i = 1; $i -le $checkpointsEsperados; $i++) {
-    $id = 'CP-{0:D2}' -f $i
+  foreach ($id in $idsEsperados) {
     if (@($pasos | Where-Object { $_ -eq $id }).Count -ne 1) { $invalida.Add("$id ausente o repetido") }
   }
+  if (@($pasos | Where-Object { $idsEsperados -notcontains $_ }).Count -gt 0) { $invalida.Add("checkpoints no esperados: " + (@($pasos | Where-Object { $idsEsperados -notcontains $_ }) -join ', ')) }
   foreach ($c in $cps) {
     if (@('OK', 'FALLA') -notcontains $c.estado) { $invalida.Add("$($c.paso) con estado '$($c.estado)'") }
     if ($c.obtenido -eq 'No alcanzado') { $invalida.Add("$($c.paso) no alcanzado") }

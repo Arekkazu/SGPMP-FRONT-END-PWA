@@ -1,0 +1,12 @@
+#!/bin/bash
+# uso: correr.sh <build> <salida>
+set -u
+B=/home/claude/g024/$1; O=/home/claude/g024/pr1/$2; mkdir -p $O
+C=testing/test_testing/Modulo8/RF-106/TC-M08-G024
+pkill -f lanzar_mock.mjs 2>/dev/null; sleep 1
+MOCK_LOG=$O/mock.log nohup node /home/claude/g024/fe/$C/evidencias/prueba_herramienta_v1/controles/lanzar_mock.mjs $B normal 4173 > $O/mock_consola.txt 2>&1 &
+sleep 2
+cd /home/claude/g024/fe
+STAGING_DIR=$O REINTENTO=1 RUN_ID=prueba-$2 QA_FRONT_URL=http://127.0.0.1:4173/sigab-test/ QA_VET_EMAIL=vet@qa.test QA_VET_PASSWORD=clave-qa-local QA_CHROME_PATH=/usr/bin/google-chrome timeout 900 pnpm exec playwright test --config $C/playwright.config.ts > $O/consola_playwright.txt 2>&1
+echo $? > $O/exit.txt
+pkill -f lanzar_mock.mjs 2>/dev/null

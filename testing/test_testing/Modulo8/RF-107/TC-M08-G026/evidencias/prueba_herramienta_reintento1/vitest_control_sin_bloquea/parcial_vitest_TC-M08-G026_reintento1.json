@@ -1,0 +1,237 @@
+{
+  "tc": "TC-M08-G026",
+  "parte": "vitest",
+  "reintento": 1,
+  "run_id": "prueba-vitest_control_sin_bloquea",
+  "fecha": "2026-11-22T18:49:10.175Z",
+  "summary": {
+    "total": 20,
+    "ok": 19,
+    "falla": 1,
+    "veredicto": "Rechazado"
+  },
+  "precondiciones": [
+    {
+      "nombre": "Zona horaria del proceso = America/Bogota (formatearHora usa la del sistema)",
+      "ok": true,
+      "detalle": "America/Bogota"
+    },
+    {
+      "nombre": "App.tsx: <EstadoSincronizacion /> va en el AppBar (estado=...), dentro de ds-app-content y antes de <main>; una sola vez",
+      "ok": true,
+      "detalle": "ds-app-content en 12666, <AppBar en 12708, estado={<EstadoSincronizacion />} en 12949, <main en 14304"
+    },
+    {
+      "nombre": "AppBar.tsx: header.ds-appbar > div.ds-appbar__right con {estado} como primer hijo",
+      "ok": true,
+      "detalle": "<header className=\"ds-appbar\" ...> ... <div className=\"ds-appbar__right\"> {estado}"
+    },
+    {
+      "nombre": "App.tsx monta <ToastHost /> una sola vez",
+      "ok": true,
+      "detalle": "<ToastHost />"
+    },
+    {
+      "nombre": "RegistrarBajaModal usa ModalShell bloqueante en el paso de confirmacion",
+      "ok": true,
+      "detalle": "bloqueante={pendiente !== null}"
+    },
+    {
+      "nombre": "ReportesPage muestra ProcesoEnCurso mientras genera",
+      "ok": true,
+      "detalle": "{generando && ( ... <ProcesoEnCurso mensaje={t('generar.generando')} />"
+    },
+    {
+      "nombre": "ToastHost abre el historial desde el aviso de saturacion",
+      "ok": true,
+      "detalle": "ds-toasts__saturacion -> setVerHistorial(true)"
+    },
+    {
+      "nombre": "Sin operacion en curso heredada de otra prueba al montar el modal critico (CP-10)",
+      "ok": true,
+      "detalle": "ninguna"
+    },
+    {
+      "nombre": "Sin operacion en curso heredada de otra prueba al montar el modal critico (CP-14 a CP-20)",
+      "ok": true,
+      "detalle": "ninguna"
+    }
+  ],
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "caso": "TC-M08-065 a",
+      "esperado": "Con E1 a E4 (id_operacion distintos) se ven exactamente E1, E2 y E3 como banners de error; E4 no se ve (espera en cola)",
+      "fuente": "RF-107 seccion 8.2 nivel 2 (maximo tres banners de error visibles); seccion 8.3 (cola de errores FIFO)",
+      "obtenido": "Banners de error visibles: [Error E1, Error E2, Error E3]; en cola: [Error E4]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "caso": "TC-M08-065 a",
+      "esperado": "Al cerrar E1 entra E4: se ven E2, E3 y E4, en ese orden",
+      "fuente": "RF-107 seccion 8.3 (cola FIFO: se muestra en cuanto el usuario cierra uno de los activos)",
+      "obtenido": "Tras cerrar E1 (60 s despues), banners de error visibles: [Error E2, Error E3, Error E4]; en cola: 0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "caso": "TC-M08-065 b (valor limite)",
+      "esperado": "Con 5 mensajes entre visibles y en cola (3 + 2) no hay banner de saturacion",
+      "fuente": "RF-107 seccion 8.3 (saturacion: supera el umbral de cinco); CA-14 (mas de 5)",
+      "obtenido": "Con 3 visibles + 2 en cola: banner de saturacion ausente",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "caso": "TC-M08-065 b (valor limite)",
+      "esperado": "Con 6 (3 + 3) aparece \"Hay 6 notificaciones pendientes. Toca aqui para ver todas.\" en lugar del banner de error mas antiguo (E1); E2 y E3 siguen visibles",
+      "fuente": "RF-107 seccion 8.3 (saturacion de la cola); CA-14",
+      "obtenido": "Con 3 visibles + 3 en cola: banner de saturacion \"Hay 6 notificaciones pendientes. Toca aquí para ver todas.\"; banners de error visibles: [Error E2, Error E3]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "caso": "TC-M08-065 c",
+      "esperado": "Al pulsar el banner de saturacion se abre el historial de la sesion con todas las retroalimentaciones en orden cronologico; cada una con tipo, mensaje, hora y estado",
+      "fuente": "RF-107 seccion 8.3 (panel con el historial completo, ordenado cronologicamente, con tipo, mensaje, timestamp y estado)",
+      "obtenido": "Panel \"Avisos de esta sesión\" con 7 filas: [Éxito | Exito S0 — Mensaje de Exito S0 | 9:00 a. m. · Se cerró solo · visible 5 s] [Error | Error E1 — Mensaje de Error E1 | 9:01 a. m. · Visible] [Error | Error E2 — Mensaje de Error E2 | 9:02 a. m. · Visible] [Error | Error E3 — Mensaje de Error E3 | 9:03 a. m. · Visible] [Error | Error E4 — Mensaje de Error E4 | 9:04 a. m. · En espera] [Error | Error E5 — Mensaje de Error E5 | 9:05 a. m. · En espera] [Error | Error E6 — Mensaje de Error E6 | 9:06 a. m. · En espera]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "caso": "TC-M08-065 d",
+      "esperado": "Con E4 en cola, al navegar fuera del modulo que origino los errores (/prediccion -> /reportes) la cola se descarta: 0 en cola y al cerrar un banner no entra E4",
+      "fuente": "RF-107 seccion 8.3 (la cola se descarta al navegar fuera del modulo que origino los errores). Decision de QA 20/11/2026: checkpoint segun la 8.3; modulo = prefijo de la ruta",
+      "obtenido": "Antes de navegar: 1 en cola ([Error E4]). Ruta tras navegar: /reportes; en cola: 0; visibles: [Error E1, Error E2, Error E3]; tras cerrar \"Error E1\": [Error E2, Error E3]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07",
+      "caso": "TC-M08-066 a",
+      "esperado": "Con un exito visible llega un error: los dos se ven, el error queda debajo del exito; el exito desaparece a los 5 s de su llegada (4,999 s visible, 5,000 s oculto) y el error sigue",
+      "fuente": "RF-107 seccion 8.2 nivel 2 (el error se posiciona debajo del exito; el exito desaparece por su temporizador) y nivel 4",
+      "obtenido": "Orden en la zona de avisos al llegar el error: [Exito S, Error X]; a 4,999 s del exito: [Exito S, Error X]; a 5,000 s: [Error X]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08",
+      "caso": "TC-M08-066 b",
+      "esperado": "Con un error visible llega un exito: el error sigue visible, en el mismo nodo y con el mismo texto, al llegar el exito y despues de que el exito expira",
+      "fuente": "RF-107 seccion 8.2 nivel 4 (un exito nunca reemplaza ni desplaza un error activo)",
+      "obtenido": "Al llegar el exito: [Error X, Exito S], error en el mismo nodo y texto: si; 5 s despues: [Error X], mismo nodo y texto: si (\"Error X No se pudo exportar\")",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-09",
+      "caso": "TC-M08-066 c",
+      "esperado": "Con el indicador de proceso en curso visible (generacion de un reporte) llega un error: el indicador se cierra y en su lugar aparece el error",
+      "fuente": "RF-107 seccion 8.2 nivel 3 (si llega un ERROR_CON_ACCION el indicador se cierra inmediatamente y el error toma su lugar)",
+      "obtenido": "Antes: indicador \"Generando el reporte...\". Tras el error: indicador ausente; 1 error(es) en la misma seccion: \"No se pudo generar el reporte No pudimos generar el reporte en este momento.\"; banners en la zona global: 0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-10",
+      "caso": "TC-M08-066 d",
+      "esperado": "Con el modal critico (ModalShell bloqueante) abierto, el icono de sincronizacion sigue en el DOM y no esta oculto (sin hidden, sin aria-hidden, sin display:none ni visibility:hidden)",
+      "fuente": "RF-107 seccion 8.2 nivel 5 (nunca puede ser ocultado, incluido el modal critico); Postcondicion 4",
+      "obtenido": "Modal bloqueante \"Confirma la baja\" abierto (role=dialog); icono .ds-sync en el DOM (\"Sincronizado\"); ocultamientos: ninguno",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-11",
+      "caso": "TC-M08-067 a",
+      "esperado": "Dos eventos con el mismo id_operacion con el banner visible: un solo banner, con el contenido del segundo",
+      "fuente": "RF-107 seccion 8.3 (deduplicacion: si el banner aun esta visible su contenido se actualiza); CA-12",
+      "obtenido": "1 banner(s): \"No se pudo descargar el reporte Intento 2: el archivo expiro.\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-12",
+      "caso": "TC-M08-067 b",
+      "esperado": "Cerrado el banner por el usuario, un tercer evento con el mismo id_operacion se descarta en silencio: 0 banners y ninguna entrada nueva en el historial",
+      "fuente": "RF-107 seccion 8.3 (si el banner ya habia sido cerrado por el usuario, el evento se descarta silenciosamente)",
+      "obtenido": "Tras cerrar y enviar un tercer evento con el mismo id: 0 banner(s); entradas del historial 1 -> 1",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-13",
+      "caso": "TC-M08-067",
+      "esperado": "Con el id_operacion ya en la cola, un segundo evento no genera otro mensaje: sigue 1 en cola con ese id y, al entrar, se ve un solo banner de esa operacion",
+      "fuente": "RF-107 seccion 8.3 (antes de encolar se verifica si ya existe un mensaje en cola con el mismo id_operacion); CA-12",
+      "obtenido": "Mensajes en cola con op-Q: 1 (cola total 1); banners de Q antes de liberar espacio: 0; tras cerrar E1 y E2: 1 banner(s) de Q (\"Error Q Primer intento\")",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-14",
+      "caso": "TC-M08-074",
+      "esperado": "En el historial de la sesion el exito (cierre automatico) figura con tipo Exito, su mensaje, su hora y estado expirado (\"Se cerro solo\"), y el error (cierre manual) con tipo Error, su mensaje, su hora y estado cerrado por el usuario (\"Cerrado por ti\"); todo en orden cronologico",
+      "fuente": "RF-107 seccion 8.3 (historial: tipo, mensaje, timestamp y estado activo / cerrado por el usuario / expirado); seccion 8.5 (tipo_retroalimentacion)",
+      "obtenido": "Fila del exito: [Éxito | Exito S — Reporte generado | 9:00 a. m. · Se cerró solo · visible 5 s]; fila del error: [Error | Error E — No se pudo exportar | 9:00 a. m. · Cerrado por ti · visible 30 s]; posiciones S=0, E=1, F1=2 de 10",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-15",
+      "caso": "TC-M08-074",
+      "esperado": "El historial registra el id_operacion de cada retroalimentacion que lo trae (op-s del exito y op-e del error)",
+      "fuente": "RF-107 seccion 8.5 (Renderizado y registro: id_operacion; disponible en el historial de sesion)",
+      "obtenido": "id de operacion en el historial: exito=op-s, error=op-e (campos de una entrada: accion, creado, description, duracion_visible, estado, id, idOperacion, timestamp_mostrado, tipo_retroalimentacion, title, variant)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-16",
+      "caso": "TC-M08-074",
+      "esperado": "timestamp_mostrado = momento en que el mensaje se hizo visible: el error F4, encolado a las 09:02 y visible desde las 09:05 al cerrarse F1, figura con la hora 09:05",
+      "fuente": "RF-107 seccion 8.5 (timestamp_mostrado: fecha y hora exacta en que el mensaje se hizo visible al usuario)",
+      "obtenido": "F4 encolado a las 09:02: si; visible tras cerrar F1 a las 09:05: si; fila del historial: [9:05 a. m. · Visible] (esperada 9:05 a. m.); en el historial de la sesion: creado=2026-11-20T14:02:00.000Z, timestamp_mostrado=1795183500000",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-17",
+      "caso": "TC-M08-074",
+      "esperado": "duracion_visible disponible en el historial: unos 5.000 ms para el exito y 30.000 ms para el error cerrado a mano a los 30 s",
+      "fuente": "RF-107 seccion 8.5 (duracion_visible en ms, por temporizador o por accion del usuario); TC-M08-074",
+      "obtenido": "Duracion visible en el historial: exito=5000 ms, error=30000 ms; el panel muestra duraciones (campos de una entrada: accion, creado, description, duracion_visible, estado, id, idOperacion, timestamp_mostrado, tipo_retroalimentacion, title, variant)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-18",
+      "caso": "TC-M08-074",
+      "esperado": "bloquea_interfaz disponible en el historial y en false para los banners de exito y de error",
+      "fuente": "RF-107 seccion 8.5 (bloquea_interfaz); TC-M08-074 (true solo en el modal)",
+      "obtenido": "bloquea_interfaz en el historial: exito=sin campo, error=sin campo",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-19",
+      "caso": "TC-M08-074",
+      "esperado": "El modal critico mostrado en la sesion queda en el historial con bloquea_interfaz = true",
+      "fuente": "RF-107 seccion 8.5 (metadatos de toda retroalimentacion renderizada); TC-M08-074 (modal critico, bloquea_interfaz true)",
+      "obtenido": "Modal critico mostrado de 09:07:00 a 09:07:30: si; en el panel: [Confirmación de acción crítica¿Confirmas esta acción?9:07 a. m. · Cerrado por ti · visible 30 s]; en el historial de la sesion: entrada con bloquea_interfaz=true (10 entradas: Exito S, Error E, Error F1, Error F2, Error F3, Error F4, Error F5, Error F6, Error F7, ¿Confirmas esta acción?)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-20",
+      "caso": "TC-M08-074",
+      "esperado": "Mostrar, actualizar, encolar, cerrar y expirar avisos y abrir el historial no envia ninguna peticion al servidor (0 peticiones)",
+      "fuente": "RF-107 Postcondicion (la retroalimentacion visual no altera ni persiste datos de negocio)",
+      "obtenido": "Peticiones al servidor durante el escenario: 0",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "OBS-9 (066 c): el error de la generacion se muestra como Alert dentro de la seccion \"Generar un reporte\" (ReportesPage.tsx:272), no en la zona global de avisos (.ds-toasts tenia 0 banners de error).",
+    "OBS-1 (066 d): con el modal critico abierto, el icono de sincronizacion queda dentro de un elemento inert (<header class=\"ds-appbar\">): no se puede pulsar ni lo ve el lector de pantalla (useModalA11y.ts:17, FUERA_DEL_INERT solo exime .ds-toasts y .session-expiration-warning; el icono va en el AppBar). La 8.2 nivel 5 dice que nunca puede ser bloqueado, incluido el modal critico; el nivel 1 dice que el modal bloquea toda la interfaz. La oclusion visual se mide en la parte Playwright.",
+    "OBS-7a (065 c): el historial se abre en ModalShell (role=dialog \"Avisos de esta sesión\") con 10 filas; clase ds-modal--lateral: si. La posicion (panel lateral de la 8.3) se mide en la parte Playwright (CP-23).",
+    "OBS-3 (067 c): doble clic en \"Exportar en PDF\" -> 1 POST /reportes enviado(s); boton deshabilitado tras el primer clic: no; aviso \"Esta operación ya está en curso o fue ejecutada recientemente.\": no. Indicador de proceso visible en 5 s: si. El texto es de FA-6 (version anterior); la 8.3 vigente no lo nombra.",
+    "OBS-5: un exito reemplazado por otro queda en el historial con estado \"cerrado\" (se muestra \"Cerrado por ti\" aunque el usuario no lo cerro; useToast.ts:153); un evento posterior con su id_operacion se descarta (visibles: [Exito B]).",
+    "OBS-6: tras expirar solo el banner de op-C, un evento con el mismo id_operacion crea un banner nuevo (\"Exito C Despues de expirar\"). La 8.3 solo define el descarte cuando el usuario lo cerro.",
+    "OBS-8: con 3 advertencias y 3 errores (0 visibles de error mas alla de las advertencias) el aviso de saturacion aparece (\"Hay 6 notificaciones pendientes. Toca aquí para ver todas.\"); useToast.ts:106-108 (esPersistente) cuenta advertencias y errores. La 8.3 habla de banners de error."
+  ],
+  "retirados": [
+    {
+      "paso": "TC-M08-074 (advertencia de log)",
+      "motivo": "La advertencia de log por la contradiccion requiere_confirmacion / nivel_criticidad_accion se genera en TC-M08-068 (d), que es de TC-M08-G028; se evalua alli. En src/ ninguna accion usa nivel_criticidad_accion (solo InfraestructuraSection, que es otro concepto)."
+    }
+  ]
+}

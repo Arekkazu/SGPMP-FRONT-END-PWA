@@ -1,0 +1,299 @@
+{
+  "tc": "TC-M08-G021",
+  "reintento": 1,
+  "run_id": "qa-m08-g021-20261121-200936",
+  "fecha": "2026-11-22T01:10:10.596Z",
+  "herramientas": "Vitest (jsdom, respuestas simuladas) + Playwright (Chromium contra TEST, Veterinario 97, activo 885, solo lectura)",
+  "summary": {
+    "total": 17,
+    "ok": 17,
+    "falla": 0,
+    "veredicto": "Aprobado"
+  },
+  "partes": {
+    "vitest": {
+      "run_id": "qa-m08-g021-20261121-200936",
+      "reintento": 1,
+      "summary": {
+        "total": 9,
+        "ok": 9,
+        "falla": 0,
+        "veredicto": "Aprobado"
+      }
+    },
+    "playwright": {
+      "run_id": "qa-m08-g021-20261121-200936",
+      "reintento": 1,
+      "summary": {
+        "total": 8,
+        "ok": 8,
+        "falla": 0,
+        "veredicto": "Aprobado"
+      },
+      "ambiente": "https://api.inmero.co/sigab-test/"
+    }
+  },
+  "precondiciones": [
+    {
+      "nombre": "Zona horaria del proceso es America/Bogota",
+      "ok": true,
+      "detalle": "timeZone=America/Bogota",
+      "parte": "vitest"
+    },
+    {
+      "nombre": "PrediccionPage.tsx protege la pestaña con historial_clinico_predictivo en lectura",
+      "ok": true,
+      "detalle": "permisoNombre: ['historial_clinico_predictivo', ACCION_R]",
+      "parte": "vitest"
+    },
+    {
+      "nombre": "Textos de es-CO usados por la medición (prediction.json, historialpredictivo)",
+      "ok": true,
+      "detalle": "{\"modo_AGRUPADO\":\"Agrupada\",\"modo_LINEAL\":\"Lineal\",\"n_eventos_other\":\"{{count}} eventos\",\"grupos_other\":\"{{count}} grupos de eventos cercanos\"}",
+      "parte": "vitest"
+    },
+    {
+      "nombre": "El simulador reproduce el backend en 4001 (correspondencias y grupos)",
+      "ok": true,
+      "detalle": "ventana=12; correspondencias=[\"P1-E1 600 \\\"Diferencia: 10 h\\\" false\",\"P2-E2 720 \\\"Diferencia: 12 h\\\" false\",\"P5-E5 600 \\\"Diferencia: 10 h\\\" false\"]; grupos=[]",
+      "parte": "vitest"
+    },
+    {
+      "nombre": "El simulador reproduce el backend en 4002 (correspondencias y grupos)",
+      "ok": true,
+      "detalle": "ventana=12; correspondencias=[\"P6-E6 30 \\\"Diferencia: 0 h 30 min\\\" true\",\"P7-E7 60 \\\"Diferencia: 1 h\\\" true\",\"P8-E8 61 \\\"Diferencia: 1 h 1 min\\\" false\",\"P9-E9 20 \\\"Diferencia: 0 h 20 min\\\" true\"]; grupos=[\"E6,P6\",\"E7,P7\",\"R9,E9,P9\"]",
+      "parte": "vitest"
+    },
+    {
+      "nombre": "Credenciales del Veterinario en memoria",
+      "ok": true,
+      "detalle": "QA_VET_EMAIL / QA_VET_PASSWORD presentes",
+      "parte": "playwright"
+    },
+    {
+      "nombre": "Login del Veterinario 97 (una sola vez)",
+      "ok": true,
+      "detalle": "URL tras el login: /sigab-test/dashboard",
+      "parte": "playwright"
+    },
+    {
+      "nombre": "El activo 885 figura entre los animales o lotes del Veterinario",
+      "ok": true,
+      "detalle": "11 opciones",
+      "parte": "playwright"
+    },
+    {
+      "nombre": "GET /historial-predictivo/885 (Lineal) responde 200",
+      "ok": true,
+      "detalle": "HTTP 200",
+      "parte": "playwright"
+    },
+    {
+      "nombre": "Ventana de correspondencia de TEST = 12 h",
+      "ok": true,
+      "detalle": "ventana_correspondencia_horas=12",
+      "parte": "playwright"
+    },
+    {
+      "nombre": "Datos de CA-7 en el 885: d1f3cc43-2684 a 600 min, f056f99d-2685 a 30 min y 511a6d66-2686 a 1200 min",
+      "ok": true,
+      "detalle": "indices pred=20/22/23 eventos=0/1/2; minutos A=600 C=30 B=1200; 24 predicciones, 3 eventos",
+      "parte": "playwright"
+    },
+    {
+      "nombre": "GET /historial-predictivo/885 (Agrupada) responde 200",
+      "ok": true,
+      "detalle": "HTTP 200",
+      "parte": "playwright"
+    },
+    {
+      "nombre": "El frontend desplegado tiene la vista del historial predictivo con el arreglo de #722 (\"Una línea punteada une la predicción con su evento sanitario\", \"grupos de eventos cercanos\")",
+      "ok": true,
+      "detalle": "bundle: index-BUhd1sjz.js; 28 scripts revisados",
+      "parte": "playwright"
+    },
+    {
+      "nombre": "Ninguna escritura no permitida hacia TEST",
+      "ok": true,
+      "detalle": "2 peticiones distintas de GET, todas permitidas",
+      "parte": "playwright"
+    }
+  ],
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "caso": "TC-M08-052 Δt 10 h (4001, Lineal)",
+      "esperado": "Exactamente 1 conector punteado (discontinuo) entre el punto de P1 y el marcador de E1",
+      "fuente": "RF-106 Restricción 5b; Proceso 2.1 (regla de correspondencia R5b: vínculo visual con conector discontinuo); CA-7 (A)",
+      "obtenido": "puntos=5/5; eventos=5/5; conectores_P1_E1=1; punteados_fuera_de_la_cuadricula=3",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "caso": "TC-M08-052 Δt 12 h 00 min (4001, Lineal)",
+      "esperado": "Exactamente 1 conector punteado entre el punto de P2 y el marcador de E2",
+      "fuente": "RF-106 Restricción 5b (|Δt| ≤ ventana de 12 h); Proceso 2.1",
+      "obtenido": "puntos=5/5; eventos=5/5; conectores_P2_E2=1; punteados_fuera_de_la_cuadricula=3",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "caso": "TC-M08-052 Δt -10 h, el evento antes de la predicción (4001, Lineal)",
+      "esperado": "Exactamente 1 conector punteado entre el punto de P5 y el marcador de E5",
+      "fuente": "RF-106 Restricción 5b (ventana temporal bidireccional de ±12 h)",
+      "obtenido": "puntos=5/5; eventos=5/5; conectores_P5_E5=1; punteados_fuera_de_la_cuadricula=3",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "caso": "TC-M08-052 Δt 12 h 01 min y 20 h (4001, Lineal)",
+      "esperado": "0 conectores entre P3 y E3 y 0 conectores entre P4 y E4 (marcadores independientes)",
+      "fuente": "RF-106 Restricción 5b (si la diferencia supera la ventana: elementos independientes); CA-7 (B)",
+      "obtenido": "puntos=5/5; eventos=5/5; conectores_P3_E3=0; conectores_P4_E4=0; punteados_fuera_de_la_cuadricula=3",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "caso": "TC-M08-052 en modo Agrupada (4001)",
+      "esperado": "En modo Agrupada: exactamente 1 conector punteado en P1-E1, P2-E2 y P5-E5, y 0 conectores en P3-E3 y P4-E4",
+      "fuente": "RF-106 CA-7 (verificar renderizado en LINEAL y AGRUPADO); Restricción 5b",
+      "obtenido": "puntos/eventos=5/5; conectores:; P1-E1=1; P2-E2=1; P3-E3=0; P4-E4=0; P5-E5=1",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "caso": "TC-M08-053 colisión a 30 min (4002)",
+      "esperado": "En Lineal y en Agrupada hay en la gráfica un marcador \"2 eventos\" en la posición de P6/E6",
+      "fuente": "RF-106 Restricción 5c; Proceso 2.1 (Colisión R5c: marcador agrupado \"N eventos\"); CA-7 (C)",
+      "obtenido": "P6/E6: LINEAL marcadores_N_eventos=[\"2 eventos\"@x=687.8, \"2 eventos\"@x=693.5, \"3 eventos\"@x=704.9] (miembros x=687.8/687.8); AGRUPADO marcadores_N_eventos=[\"2 eventos\"@x=687.8, \"2 eventos\"@x=693.5, \"3 eventos\"@x=704.9] (miembros x=687.8/687.8); lista_agrupado=[\"2 eventos · 1/10/26, 10:30 a. m.historialpredictivo.tipo.CON\", \"2 eventos · 4/10/26, 11:00 a. m.historialpredictivo.tipo.DIA\", \"3 eventos · 10/10/26, 10:40 a. m.Evaluación · 10/10/26, 10:4\"]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07",
+      "caso": "TC-M08-053 colisión a 60 min (4002)",
+      "esperado": "En Lineal y en Agrupada hay en la gráfica un marcador \"2 eventos\" en la posición de P7/E7",
+      "fuente": "RF-106 Restricción 5c (|Δt| ≤ 1 h)",
+      "obtenido": "P7/E7: LINEAL marcadores_N_eventos=[\"2 eventos\"@x=687.8, \"2 eventos\"@x=693.5, \"3 eventos\"@x=704.9] (miembros x=693.5/693.6); AGRUPADO marcadores_N_eventos=[\"2 eventos\"@x=687.8, \"2 eventos\"@x=693.5, \"3 eventos\"@x=704.9] (miembros x=693.5/693.6); lista_agrupado=[\"2 eventos · 1/10/26, 10:30 a. m.historialpredictivo.tipo.CON\", \"2 eventos · 4/10/26, 11:00 a. m.historialpredictivo.tipo.DIA\", \"3 eventos · 10/10/26, 10:40 a. m.Evaluación · 10/10/26, 10:4\"]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08",
+      "caso": "TC-M08-053 61 min, cercanos no colisionados (4002, Lineal)",
+      "esperado": "Sin marcador de grupo en P8/E8 y exactamente 1 conector punteado entre el punto de P8 y el marcador de E8",
+      "fuente": "RF-106 Restricción 5d; Proceso 2.1 (Cercanos no colisionados R5d: conector discontinuo)",
+      "obtenido": "puntos=4/4; eventos=4/4; sin_marcador_grupo=true [\"2 eventos\"@x=687.8, \"2 eventos\"@x=693.5, \"3 eventos\"@x=704.9] (miembros x=699.2/699.3); conectores_P8_E8=1",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-09",
+      "caso": "TC-M08-053 grupo de tres (4002, Agrupada)",
+      "esperado": "Al expandir los grupos, el grupo de tres lista sus elementos en el orden retroalimentación (R9), evento sanitario (E9), predicción (P9); cada elemento se identifica por su fecha y hora",
+      "fuente": "RF-106 Restricción 5c (prioridad visual al expandir: 1° RF-72, 2° RF-41, 3° RF-67); Proceso 2.1",
+      "obtenido": "details_open=true; grupos=3; grupo_de_3=[\"Evaluación · 10/10/26, 10:40 a. m.\", \"historialpredictivo.tipo.DIAGNOSTICO · 10/10/26, 10:20 a. m.\", \"Predicción · 10/10/26, 10:00 a. m.\"]; orden_identificado=[R9, E9, P9]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-10",
+      "caso": "TC-M08-052 CA-7 (A), respuesta del backend (885)",
+      "esperado": "En \"correspondencias\" hay un elemento que une la predicción d1f3cc43 con el evento 2684, con diferencia_minutos 600, diferencia \"Diferencia: 10 h\" y colision false",
+      "fuente": "RF-106 Restricción 5b; CA-7 (A)",
+      "obtenido": "{pred=d1f3cc43, evento=2684, diferencia_minutos=600, diferencia=\"Diferencia: 10 h\", colision=false}",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-11",
+      "caso": "TC-M08-052 CA-7 (B), respuesta del backend (885)",
+      "esperado": "Ningún elemento de \"correspondencias\" une la predicción 511a6d66 con el evento 2686 (1200 min, fuera de la ventana)",
+      "fuente": "RF-106 Restricción 5b (si supera la ventana: independientes); CA-7 (B)",
+      "obtenido": "elementos 511a6d66-2686 en correspondencias: 0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-12",
+      "caso": "TC-M08-053 CA-7 (C), respuesta del backend (885)",
+      "esperado": "Existe un grupo que contiene la predicción f056f99d y el evento 2685 (30 min), y en ese grupo el evento va antes que la predicción",
+      "fuente": "RF-106 Restricción 5c (colisión ≤ 1 h; prioridad: RF-72, RF-41, RF-67); CA-7 (C)",
+      "obtenido": "grupo 1 de 2: [EVT:2685@2026-10-26T21:36:22+00:00, PRED:f056f99d@2026-10-26T21:06:22+00:00]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-13",
+      "caso": "TC-M08-052, respuesta del backend, todos los pares (885)",
+      "esperado": "El conjunto de pares (predicción, evento) de \"correspondencias\" es exactamente el de los pares con |Δt| ≤ 12 h calculado con las fechas de \"predicciones\" y \"eventos_sanitarios\" de la respuesta, y cada diferencia_minutos = floor(|Δt| / 60 s)",
+      "fuente": "RF-106 Restricción 5b; Proceso 2.1 (regla de correspondencia R5b)",
+      "obtenido": "calculados=[d1f3cc43-2684:600, f056f99d-2685:30]; backend=[d1f3cc43-2684:600, f056f99d-2685:30]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-14",
+      "caso": "TC-M08-052 CA-7 (A), vista en TEST (885)",
+      "esperado": "En Lineal y en Agrupada: exactamente 1 conector punteado entre el punto de d1f3cc43 y el marcador de 2684, y al pasar el ratón sobre el marcador de 2684 el texto que se muestra contiene \"Diferencia: 10 h\"",
+      "fuente": "RF-106 Restricción 5b; Proceso 2.1; CA-7 (A) (conector discontinuo; tooltip \"Diferencia: 10 h\")",
+      "obtenido": "LINEAL: puntos=24/24; eventos=3/3; conectores_d1f3cc43_2684=1; texto_al_pasar_el_raton=\"25/10/26, 12:06 a. m. · Deshidratación · juan veterinario Prueba · Diferencia: 10 h\" | AGRUPADO: puntos=24/24; eventos=3/3; conectores_d1f3cc43_2684=1; texto_al_pasar_el_raton=\"25/10/26, 12:06 a. m. · Deshidratación · juan veterinario Prueba · Diferencia: 10 h\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-15",
+      "caso": "TC-M08-052 CA-7 (B), vista en TEST (885)",
+      "esperado": "En Lineal y en Agrupada: 0 conectores entre el punto de 511a6d66 y el marcador de 2686",
+      "fuente": "RF-106 Restricción 5b; CA-7 (B) (marcadores independientes sin conector)",
+      "obtenido": "LINEAL: conectores_511a6d66_2686=0 | AGRUPADO: conectores_511a6d66_2686=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-16",
+      "caso": "TC-M08-053 CA-7 (C), vista en TEST (885)",
+      "esperado": "En Lineal y en Agrupada: un marcador \"N eventos\" dentro de la gráfica (N = tamaño del grupo de CP-12) en la posición de f056f99d/2685",
+      "fuente": "RF-106 Restricción 5c; Proceso 2.1 (marcador agrupado \"N eventos\"); CA-7 (C)",
+      "obtenido": "LINEAL: marcadores \"N eventos\" en la gráfica=[\"2 eventos\"@x=967.8, \"4 eventos\"@x=1031.9] (miembros x=967.8/967.9, N=2) | AGRUPADO: marcadores \"N eventos\" en la gráfica=[\"2 eventos\"@x=967.8, \"4 eventos\"@x=1031.9] (miembros x=967.8/967.9, N=2)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-17",
+      "caso": "TC-M08-053 orden al expandir, vista en TEST (885)",
+      "esperado": "En Agrupada, al expandir los grupos, el grupo de CP-12 lista sus elementos en el orden de la regla (retroalimentaciones, eventos sanitarios, predicciones; a igual tipo, por fecha), calculado con sus miembros; cada elemento se identifica por su fecha y hora",
+      "fuente": "RF-106 Restricción 5c (prioridad visual al expandir)",
+      "obtenido": "details_open=true; grupo 1 de 2: [\"historialpredictivo.tipo.CONTROL_PREVENTIVO · 26/10/26, 4:36 p. m.\", \"Predicción · 26/10/26, 4:06 p. m.\"]; orden_identificado=[EVT:2685, PRED:f056f99d]; orden_esperado=[EVT:2685, PRED:f056f99d]",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "OBS-9 (medida, 4001, Lineal; retirado como checkpoint): título de cada marcador de evento: [E1: \"1/10/26, 8:00 p. m. · Evento QA 5101 · Vet QA · Diferencia: 10 h\"; E2: \"4/10/26, 10:00 p. m. · Evento QA 5102 · Vet QA · Diferencia: 12 h\"; E3: \"7/10/26, 10:01 p. m. · Evento QA 5103 · Vet QA\"; E4: \"11/10/26, 6:00 a. m. · Evento QA 5104 · Vet QA\"; E5: \"13/10/26, 12:00 a. m. · Evento QA 5105 · Vet QA · Diferencia: 10 h\"]. Esperado por R5d para E2 \"Diferencia: 12 h\" y para E5 \"Diferencia: 10 h\".",
+    "OBS-5 (medida, 4001): la vista lista las correspondencias como texto, debajo de la gráfica, en un desplegable (3 elementos): [\"Predicción del 1/10/26, 10:00 a. m. y evento sanitario del 1/10/26, 8:00 p. m.: Diferencia: 10 h\", \"Predicción del 4/10/26, 10:00 a. m. y evento sanitario del 4/10/26, 10:00 p. m.: Diferencia: 12 h\", \"Predicción del 13/10/26, 10:00 a. m. y evento sanitario del 13/10/26, 12:00 a. m.: Diferencia: 10 h\"]. Reintento 1: la vista arma «Predicción del … y evento sanitario del …» (prediction.json, historialpredictivo.par) con la diferencia que envía el backend (historial_predictivo.py:101).",
+    "OBS-4 (medida, 4002, Lineal): en la posición del grupo P6/E6 siguen dibujados 1 punto(s) de la línea y 1 marcador(es) de evento por separado.",
+    "OBS-9 (medida, 4002, Lineal; retirado como checkpoint): título del marcador de E8 (61 min) = \"7/10/26, 11:01 a. m. · Evento QA 5203 · Vet QA · Diferencia: 1 h 1 min\". Esperado por R5d: \"Diferencia: 1 h 1 min\".",
+    "OBS-7 (medida, 4002, Agrupada): etiquetas de tipo al expandir los grupos: [\"historialpredictivo.tipo.CONTROL_PREVENTIVO\", \"Predicción\", \"historialpredictivo.tipo.DIAGNOSTICO\", \"Evaluación\"]. Con la forma real de la respuesta, el \"tipo\" de un evento sanitario es su tipo clínico (DIAGNOSTICO, TRATAMIENTO…), porque serial() pone {\"tipo\": m.tipo, ..., **m.datos} y datos trae \"tipo\": e[\"tipo\"] (consultar_historial_predictivo_use_case.py:105 y :118-119); la vista traduce historialpredictivo.tipo.<tipo> (HistorialPredictivoView.tsx:255) y espera EVENTO_SANITARIO (historialPredictivoApi.ts:8; tooltip :130).",
+    "OBS-1: los límites (≤ 12 h y ≤ 1 h, inclusivos y en los dos sentidos) los calcula el backend (historial_predictivo.py:21, :84, :96-97); aquí el simulador los replica. Con datos reales se verifican en CP-10 a CP-13.",
+    "OBS-2: la agrupación del backend es encadenada (historial_predictivo.py:84 compara con el último del grupo): marcadores a menos de 1 h entre sí forman un solo grupo aunque el primero y el último estén a más de 1 h. R5c no define las cadenas.",
+    "OBS-3: CA-12 dice ±24 h y la Restricción 5b ±12 h (configurable en M09); se usa 12 h (valor por defecto y el de TEST).",
+    "OBS-6 (reintento 1): la vista usa ahora el campo \"colision\": dibuja el conector y pone la diferencia en el título solo para las correspondencias con colision=false (HistorialPredictivoView.tsx:199 y :217); un par en colisión va al marcador \"N eventos\".",
+    "OBS-8 (reintento 1): el arreglo quitó el Tooltip de recharts (a74c51cb); cada marcador lleva su propio <title> (HistorialPredictivoView.tsx:358, :364, :375 y :385), que el navegador muestra al pasar el ratón. Lo que ve el usuario se mide en navegador real (CP-14). Texto de la ronda 1: en recharts 3.10 el ComposedChart solo admite tooltip por eje (ComposedChart.js, allowedTooltipTypes = ['axis']) y con el eje X numérico el tooltip solo se ubica en los extremos del dominio (tooltipSelectors.js, scale.domain()); además marcadorTooltip lee payload[0], que es la línea (HistorialPredictivoView.tsx:124). Por eso el tooltip no puede mostrar un evento intermedio; se mide en navegador real en CP-14.",
+    "Datos reales del 885: ventana=12 h; 24 predicciones, 3 eventos, 4 retroalimentaciones; correspondencias=[d1f3cc43-2684 600 min \"Diferencia: 10 h\" colision=false; f056f99d-2685 30 min \"Diferencia: 0 h 30 min\" colision=true]; grupos=[(EVT:2685, PRED:f056f99d); (RETRO:32985675, RETRO:2895a389, RETRO:6e0d4f0f, RETRO:f80c05d9)]; \"tipo\" de los eventos en la respuesta: [2684:DIAGNOSTICO, 2685:CONTROL_PREVENTIVO, 2686:TRATAMIENTO]",
+    "OBS-8 (navegador real): texto al pasar el ratón sobre cada marcador de evento. LINEAL: [2684: \"25/10/26, 12:06 a. m. · Deshidratación · juan veterinario Prueba · Diferencia: 10 h\"; 2685: \"26/10/26, 4:36 p. m. · Sin descripción · juan veterinario Prueba\"; 2686: \"28/10/26, 3:06 p. m. · Sin descripción · juan veterinario Prueba\"]; AGRUPADO: [2684: \"25/10/26, 12:06 a. m. · Deshidratación · juan veterinario Prueba · Diferencia: 10 h\"; 2685: \"26/10/26, 4:36 p. m. · Sin descripción · juan veterinario Prueba\"; 2686: \"28/10/26, 3:06 p. m. · Sin descripción · juan veterinario Prueba\"]",
+    "OBS-4 (navegador real, Lineal): en la posición del grupo f056f99d/2685 siguen dibujados 3 punto(s) de la línea y 1 marcador(es) de evento por separado.",
+    "OBS-7 (navegador real, Agrupada): grupos listados=[\"2 eventos · 26/10/26, 4:36 p. m.historialpredictivo.tipo.CONTROL_PREVENTIVO · 26\", \"4 eventos · 20/11/26, 10:08 a. m.Evaluación · 20/11/26, 10:08 a. m.Evaluación · \"]; etiquetas del grupo de CP-12=[\"historialpredictivo.tipo.CONTROL_PREVENTIVO\", \"Predicción\"]",
+    "Despliegue: bundle index-BUhd1sjz.js en https://api.inmero.co/sigab-test/."
+  ],
+  "retirados": [
+    {
+      "paso": "TC-M08-052/053 límites exactos con datos reales",
+      "motivo": "La ventana (≤ 12 h) y la colisión (≤ 1 h) las calcula el backend (historial_predictivo.py:21, :84, :96-97). En TEST no hay pares a 12 h 00, 12 h 01, 60 ni 61 min (el 885 tiene 600, 30 y 1200 min). Con datos reales se miden los tres escenarios de CA-7 en la parte Playwright (CP-10 a CP-17)"
+    },
+    {
+      "paso": "Tooltip con la diferencia en 12 h 00, -10 h y 61 min (\"Diferencia: 12 h\", \"Diferencia: 10 h\", \"Diferencia: 1 h 1 min\")",
+      "motivo": "jsdom no activa el tooltip de recharts (el contenedor no tiene tamaño: con mouseEnter/mouseMove sobre el símbolo y sobre .recharts-wrapper el tooltip queda vacío y oculto), así que en Vitest no se puede medir lo que ve el usuario. El tooltip se mide en navegador real (CP-14, par de 10 h del 885); en TEST no hay pares de 12 h 00, -10 h ni 61 min"
+    }
+  ],
+  "escrituras_playwright": [
+    {
+      "metodo": "POST",
+      "ruta": "/api-sgpmp-test/sesiones/",
+      "resultado": "al servidor (login 1)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/api-sgpmp-test/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    }
+  ]
+}

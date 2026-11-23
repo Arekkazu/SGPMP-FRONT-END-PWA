@@ -9,6 +9,7 @@
 | Runner | `ejecutar_tc_m08_g027.ps1` (PowerShell 5.1, ASCII puro, CRLF, sin BOM) |
 | Red | Simulada exclusivamente mediante `http.defaults.adapter` (con emulación de `config.timeout` de axios). Sin conexión a TEST ni a red externa. |
 | Fecha de construcción | 2026-11-21 |
+| Reintento 1 | 2026-11-22: HEAD `af93ae87`, spec v1.1 y runner v1.1 (10 checkpoints); corrida `qa-m08-g027-20261122-151841` Aprobado 10/10, promovida (sección 7.6) |
 
 ---
 
@@ -26,6 +27,8 @@
 ---
 
 ## 2. Checkpoints (`CP-01` a `CP-11`)
+
+> Ronda 1. En el reintento 1 cambian CP-02, CP-03 y CP-05 y CP-04 pasa a observación (sección 7.3).
 
 Cada checkpoint arranca en estado `FALLA` con `obtenido: "No alcanzado"`. No se usan aserciones condicionales ni `skip`/`only`.
 
@@ -151,3 +154,82 @@ Todas las 11 corridas finalizaron con `EXIT=1`, `precondiciones_falsas=0` y 0 ch
 - `src\shared\i18n\locales\es-CO\reportes.json`: `74A06B5AB5A8FC3B606333F407EB86A9D19CE20A05E25103EE4DC7205FAFE0CA`
 - `src\shared\i18n\locales\es-CO\finanzas.json`: `E9717F056254E98F66AB1468C93E46FCFF1A1D292ECCC847D588463477B9B765`
 - `src\shared\i18n\locales\es-CO\integracion.json`: `AC006F7B08A1A31A87F8FCA835A5625424D9C32EB7A284A80FD42372D7B8A89F`
+
+---
+
+## 7. Reintento 1 (2026-11-22)
+
+### 7.1 Cambio de Desarrollo (observado)
+
+- Issue 730 (INC-M08-392-G027): commit `ac134ec1` («avisos, proceso en curso y confirmaciones criticas») y `d19d23c1` (el aviso «Espera a que finalice…» sale una sola vez con StrictMode), en `test-JuanSG` HEAD `af93ae87`, `src/` sin cambios locales.
+- `ProcesoEnCurso.tsx`: `UMBRAL_PROCESO_MS = 3_000` (:22); se monta al empezar la operación y se deja ver en `UMBRAL_PROCESO_MS + 1` (:35); el aviso `AVISO_LARGO_MS = 30_000` (:17) cuenta desde el montaje (:36). No lee `tiempo_estimado_operacion` (1 referencia en `src\`, en un comentario).
+- `errors.ts`: sin respuesta por `ECONNABORTED`/`ETIMEDOUT`, mensaje `errores.tiempo_agotado` (:41-42).
+- `CierreView.tsx`: «Cerrar período» con `title` `proceso.espera` mientras el cierre está en curso (:341) y `enOperacion(t('cierre.operacion'))`; `ReportesPage.tsx`: `enOperacion(t('generar.operacion'))` y `title` `esperaGeneracion` (:137, :257).
+- `ModalShell.tsx`: con `operacionEnCurso()` el modal bloqueante no se abre, avisa `proceso.espera` y llama a `onClose` (:58-73).
+- Despliegue en TEST revisado en el navegador integrado (bundle `index-BUhd1sjz.js`).
+
+### 7.2 Specs de la ronda 1 sin cambios contra el código actual
+
+Contenedor de Claude, `src/` de `af93ae87` (`prueba_herramienta_reintento1/ronda1_sin_cambios/`): 7 OK / 4 FALLA (Rechazado).
+- CP-01, CP-06 a CP-11 OK (CP-08, CP-09 y CP-11 pasan de FALLA a OK).
+- CP-02 FALLA: el spec exigía el indicador en `t0+0` (R129 / 8.5 paso 3 con `tiempo_estimado_operacion=3001`); la entrega lo muestra en `t0+3.001`.
+- CP-03, CP-04 y CP-05 FALLA de herramienta: medían en `t0` y sin `t1` porque el indicador ya no se ve de inmediato.
+
+### 7.3 Specs v1.1 (decisión de Sebastian 2026-11-22: opción B, «como la entrega»)
+
+- **CP-02:** operación de 10.000 ms; el indicador NO se ve en `t0+3.000` y SÍ en `t0+3.001` con el texto exacto de `generar.generando` (activación por tiempo transcurrido). La diferencia con R129 («Si > 3000 ms, se activa PROCESO_EN_CURSO») y 8.5 paso 3 («M08 evalúa el campo tiempo_estimado_operacion…») queda en **OBS-6** para los líderes y Análisis.
+- **ADAPT-1 (CP-03):** se mide en `t0+3.001`, con el indicador visible.
+- **ADAPT-2 (CP-05):** `t1` es el instante real en que aparece el indicador (esperado literal de la ronda 1): el spec avanza el reloj simulado de a 1 ms y lee la pantalla tras drenar microtareas, hasta 10.000 ms; mide `t1+30.001`. Medido: `t1 = t0+3.001`. Límite propio de 60 s para esa prueba. Si el indicador no aparece, CP-05 da FALLA con lo medido.
+- **CP-04 pasa a OBS-5** (decisión de Sebastian 2026-11-21, límite exacto del reloj simulado): registra `t1+29.999`, `t1+30.000` y también `t0+29.999/30.000/30.001` (el aviso cuenta desde el inicio de la operación, según la entrega). Quedan 10 checkpoints: CP-01 a CP-03 y CP-05 a CP-11.
+- **P7 (nueva):** `ProcesoEnCurso.tsx` contiene `export const UMBRAL_PROCESO_MS = 3_000;` y `setTimeout(() => setVisible(true), UMBRAL_PROCESO_MS + 1)`.
+- **OBS-1 reescrita:** cuenta referencias totales y fuera de comentarios (`refsTiempoEstimadoCodigo`).
+- **CP-11:** el `Anfitrion` no monta `EstadoSincronizacion`, así que no hace falta endurecer el filtro de mensajes de la ronda 1 (el ícono de sincronización no puede aportar un `status` falso).
+- **Runner:** lista explícita de ids (`CP-01`, `CP-02`, `CP-03`, `CP-05` … `CP-11`), rechaza ids no esperados, `$checkpointsEsperados = 10` y `src\shared\hooks\operacionEnCurso.ts` en la lista de SHA. Verificación estática en el contenedor: `BOM=False`, `nonAscii=0`, `lfSinCr=0`; el contenedor no tiene PowerShell: `ParseFile` va en el prompt de la corrida oficial.
+- Diffs: `prueba_herramienta_reintento1/diff_vitest_ronda1_vs_v1.1.txt` y `diff_runner_ronda1_vs_v1.1.txt`.
+
+### 7.4 Prueba de la herramienta (`evidencias/prueba_herramienta_reintento1/`)
+
+Contenedor de Claude, `src/` de `af93ae87`, `TZ=America/Bogota`, `REINTENTO=1`. Controles con un plugin de Vite que reemplaza texto exacto en memoria (`controles/vitest.mutacion.config.mts.txt`, copiado a la raíz del repo sin `.txt` y con `QA_MUTACION=<nombre>`); `src/` no se toca. Cada control vale solo si la consola trae una línea `[QA_MUTACION]` por reemplazo.
+
+| Corrida | Mutación | Resultado |
+|---|---|---|
+| `vitest_normal_1` a `3` | — | 10/10, exit 0, P1–P7 OK, `t1 = t0+3.001` |
+| `vitest_control_umbral_0` | indicador visible en 0 ms | CP-01 y CP-02 FALLA |
+| `vitest_control_indicador_nunca` | `if (true) return null;` | CP-02, CP-03 y CP-05 FALLA (CP-05 «sin t1», con lo medido) |
+| `vitest_control_aviso_nunca` | `setLargo(false)` | solo CP-05 FALLA |
+| `vitest_control_progreso_50` | `progreso = 50` por defecto | CP-02 (texto «… 50 %») y CP-03 (barra, sin spinner) FALLA |
+| `vitest_control_sin_fa3` | sin `errores.tiempo_agotado` | solo CP-08 FALLA («Ocurrió un error inesperado…») |
+| `vitest_control_sin_title_cierre` | `title={undefined}` en «Cerrar período» | solo CP-09 FALLA |
+| `vitest_control_sin_guarda_modal` | `operacionEnCurso()` → `null` en `ModalShell` (2 reemplazos) | solo CP-11 FALLA (diálogo «Revocar» abierto) |
+| `vitest_control_indicador_pegado` | sin `setGenerando(false)` | CP-06, CP-07 y CP-08 FALLA (`indicador=sí`) |
+
+Ningún «No alcanzado» y ninguna precondición falsa. `vitest list`: 7 pruebas. SHA de la prueba en `prueba_herramienta_reintento1/SHA256SUMS.txt`.
+
+### 7.5 Archivos del reintento 1
+
+- `tc-m08-g027.test.tsx` v1.1: `E48434917261A2B6C6BD182E632401EB194803B0BF122D1FB1C74D7C23841D48`
+- `ejecutar_tc_m08_g027.ps1` (reintento 1): `6C81EBCB4F78270993F97F9D74A4DDDA8F33ECDAE55596EC3E341757FD14A29E`
+- Respaldos de la ronda 1 en `evidencias/fuentes_generador/ronda1/`: `tc-m08-g027.test.tsx.txt` (`8124FBB5…`), `ejecutar_tc_m08_g027.ps1.txt` (`E3C444BD…`), `DISENO_TC-M08-G027.md.txt` (`8E1BFB8D…`).
+- Fuentes `src` nuevas en la lista del runner: `src\shared\hooks\operacionEnCurso.ts` `47627F990598B418EFA3D86C5BDFA5118606190D732CF8C14214E7EF96107BC8`; las demás se registran en la corrida oficial.
+
+### 7.6 Corrida oficial y promoción
+
+- **RUN** `qa-m08-g027-20261122-151841` (staging `evidencias/run-20261122-151841/`), 2026-11-22 15:18, exit 0, `-Reintento 1`, ejecutada por el agente con el prompt cerrado (SHA, HEAD, `Test-Path` del `_reintento1.json` = False, `ParseFile`, `vitest list` = 7 pruebas, una ejecución).
+- **Validada por Claude contra los archivos del equipo:** SHA del spec, del runner y del DISENO; 17 archivos de `src` (HEAD `af93ae87`, sin cambios locales; `operacionEnCurso.ts` `47627F99…`); una sola carpeta `run-*` nueva, sin archivos fuera del staging; Vitest 7/7; 10 checkpoints OK con los ids esperados, ninguno «No alcanzado»; P1–P7 OK; escaneo 0 hallazgos; `resultados\` sin cambios durante la corrida.
+
+| CP | Obtenido (reintento 1) | Ronda 1 |
+|---|---|---|
+| CP-01 | No visible en 0, 1.000 y 2.999 ms | FALLA → **OK** |
+| CP-02 | Ausente en `t0+3.000`, visible en `t0+3.001` («Generando el reporte...») | OK (esperado de la ronda 1: visible en `t0`) → **OK** según la entrega (OBS-6) |
+| CP-03 | En `t0+3.001`: 1 spinner, 0 barras | OK |
+| CP-04 | Pasa a OBS-5: `t1+29.999` y `t1+30.000` presentes; desde el inicio, `t0+29.999` ausente y `t0+30.000` presente | FALLA → observación |
+| CP-05 | `t1 = t0+3.001`; en `t1+30.001` el aviso `proceso.largo` | OK |
+| CP-06, CP-07 | Indicador retirado; banner de éxito / error del 422 | OK |
+| CP-08 | «La operación no pudo completarse. Intenta nuevamente.» | FALLA → **OK** |
+| CP-09 | «Cerrar período» `aria-disabled=true` con «Espera a que finalice el cierre del período antes de continuar.» | FALLA → **OK** |
+| CP-10 | Navega a `/reportes`, sin `inert` ni `aria-modal` | OK |
+| CP-11 | 0 diálogos; aviso «Espera a que finalice el cierre del período antes de continuar.» | FALLA → **OK** |
+
+- **Observaciones que siguen:** OBS-6 (activación por tiempo transcurrido frente a `tiempo_estimado_operacion` de R129 / 8.5 paso 3, para líderes y Análisis), OBS-1 a OBS-5.
+- **Promoción** (2026-11-22, por orden de Sebastian): `resultados/resultado_TC-M08-G027_reintento1.json` = `2CBB169CAE54ECE4954E96B747B5583BE80372AE66AF8B0BED33F3D97123B11E`, igual en origen y destino; ronda 1 intacta (`098C183D…`). Registro `evidencias/PROMOCION_TC-M08-G027_reintento1.txt`. Lectura: total 10, passed 10, failed 0 → **Aprobado**. INC-M08-392-G027 (GitHub 730) corregido.
+

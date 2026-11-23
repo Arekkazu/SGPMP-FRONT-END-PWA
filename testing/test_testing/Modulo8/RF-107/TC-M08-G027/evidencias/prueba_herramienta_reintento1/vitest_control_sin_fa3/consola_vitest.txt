@@ -1,0 +1,34 @@
+
+ RUN  v4.1.11 /home/claude/g024/fe
+
+[QA_MUTACION] sin_fa3[0] aplicada en /home/claude/g024/fe/src/shared/api/errors.ts
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx (7 tests | 1 failed) 750ms
+     × CP-08 timeout 60.000 ms cierra indicador y muestra mensaje FA-3 53ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx > TC-M08-063 Indicador de proceso en curso (RF-107 8.5) > CP-08 timeout 60.000 ms cierra indicador y muestra mensaje FA-3
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G027/tc-m08-g027.test.tsx:730:18
+    728|         `indicador=${ind ? 'sí' : 'no'}; textos_error=[${textos.map((x…
+    729|       );
+    730|       expect(ok).toBe(true);
+       |                  ^
+    731|     } finally {
+    732|       diferida.resolver({ status: 201, data: crearReporteExito() });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 6 passed (7)
+   Start at  15:14:58
+   Duration  2.45s (transform 782ms, setup 78ms, import 1.15s, tests 750ms, environment 323ms)
+

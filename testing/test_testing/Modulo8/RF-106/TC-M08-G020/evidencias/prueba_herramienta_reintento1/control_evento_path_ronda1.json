@@ -1,0 +1,116 @@
+{
+  "tc": "TC-M08-G020",
+  "reintento": 1,
+  "run_id": "control-evento_path_ronda1",
+  "fecha": "2026-11-22T00:17:16.774Z",
+  "summary": {
+    "total": 8,
+    "ok": 8,
+    "falla": 0,
+    "veredicto": "Aprobado"
+  },
+  "precondiciones": [
+    {
+      "nombre": "Zona horaria del proceso es America/Bogota",
+      "ok": true,
+      "detalle": "timeZone=America/Bogota"
+    },
+    {
+      "nombre": "PrediccionPage.tsx contiene permisoNombre",
+      "ok": true,
+      "detalle": "permisoNombre: ['historial_clinico_predictivo', ACCION_R]"
+    },
+    {
+      "nombre": "HistorialPredictivoView.tsx contiene formato de item pendiente",
+      "ok": true,
+      "detalle": "<span>{formatearFechaHora(p.fecha_inferencia)} · {etiquetaNivel(p.nivel_riesgo)} · {p.condicion}</span>"
+    },
+    {
+      "nombre": "HistorialPredictivoView.tsx contiene Alert de mensaje informativo",
+      "ok": true,
+      "detalle": "{datos.mensaje && <Alert variant=\"info\" title={datos.mensaje} />}"
+    },
+    {
+      "nombre": "tokens.css define --sem-error en rojo (todas sus definiciones)",
+      "ok": true,
+      "detalle": "--sem-error=[#c0280a, #e06050]"
+    }
+  ],
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "caso": "051 Línea por nivel de riesgo (885)",
+      "esperado": "7 puntos; ordenados por cx, sus niveles son 0,1,2,3,2,1,0; puntos del mismo nivel tienen el mismo cy (±1 px) y a mayor nivel menor cy (estricto); el eje Y muestra exactamente \"Sin riesgo\", \"Bajo\", \"Medio\", \"Alto\"",
+      "fuente": "RF-106 Proceso 3 (eje Y: nivel 0-3; línea con el nivel_riesgo)",
+      "obtenido": "seleccion=ok; puntos=7; cy_por_x=[280, 212.5, 145, 77.5, 145, 212.5, 280]; niveles_deducidos=[0,1,2,3,2,1,0]; mismo_nivel_mismo_cy=true; mayor_nivel_menor_cy=true; eje_y=[\"Sin riesgo\", \"Bajo\", \"Medio\", \"Alto\"]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "caso": "051 Eventos sanitarios (885)",
+      "esperado": "2 marcadores de evento con relleno rojo (fill que contiene \"--danger-600\" o \"#dc2626\"); posición temporal: para TODOS los marcadores (puntos, eventos y valoraciones), (x − xmin)/(xmax − xmin) = (t − tmin)/(tmax − tmin) con tolerancia 0,01; y el evento 2684 tiene el mismo x que el punto p2 (±1 px)",
+      "fuente": "RF-106 Proceso 3 (rojo sólido); CA-2",
+      "obtenido": "seleccion=ok; eventos=2; fills=[\"var(--danger-600, #dc2626)\", \"var(--danger-600, #dc2626)\"]; max_error_pos_rel=0.000000; x_ev2684=705.87, x_p2=705.87 (diff=0.00 px)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "caso": "051 Valoraciones (885)",
+      "esperado": "4 marcadores; ordenados por x, sus textos son exactamente ✓, ✗, ◐, ○ (CORRECTO, INCORRECTO, PARCIAL, SIN_EVENTO)",
+      "fuente": "RF-106 Proceso 3",
+      "obtenido": "seleccion=ok; valoraciones=4; textos_por_x=[\"✓\", \"✗\", \"◐\", \"○\"]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "caso": "051 Hora de Bogotá (885)",
+      "esperado": "en la lista de pendientes, la parte de fecha y hora (texto antes del primer \" · \") de p1, p2 y p3 es igual a new Date(iso).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Bogota' }) para 2026-10-10T15:00:00Z, 2026-10-11T03:00:00Z y 2026-10-11T05:00:00Z, es decir 10/10 10:00, 10/10 22:00 y 11/10 00:00 en Bogotá. Calcula el esperado con timeZone explícito, no con el formateador de la app",
+      "fuente": "RF-106 Restricción 5a; Proceso 2.1 (medido con el equipo en America/Bogota; decisión de Sebastian 2026-11-20)",
+      "obtenido": "seleccion=ok; pendientes_medidos={p1: \"10/10/26, 10:00 a. m.\", p2: \"10/10/26, 10:00 p. m.\", p3: \"11/10/26, 12:00 a. m.\"}; esperados_bogota={p1: \"10/10/26, 10:00 a. m.\", p2: \"10/10/26, 10:00 p. m.\", p3: \"11/10/26, 12:00 a. m.\"}",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "caso": "051 Eje X en el rango seleccionado (885, rango por defecto 2025-11-20 a 2026-11-20)",
+      "esperado": "tomando como dominio el rango elegido en días completos de Bogotá (inicio 2025-11-20T05:00:00Z, fin 2026-11-21T04:59:59.999Z), la posición relativa en el área de trazado (x − x1)/(x2 − x1) del primer marcador (p1, 2026-10-10T15:00:00Z) y del último (valoración de 2026-10-31T12:00:00Z) es (t − inicio)/(fin − inicio) con tolerancia 0,02 (≈ 0,886 y ≈ 0,943; calcula tú el valor exacto)",
+      "fuente": "RF-106 Proceso 3 (\"Eje X: tiempo (rango seleccionado)\")",
+      "obtenido": "seleccion=ok; ejeX=[x1=88, x2=784]; p1: x=704.92, pos_rel_medida=0.8864 (esperada=0.8864); ultimo_marcador: x=735.11, pos_rel_medida=0.9298 (esperada=0.9298)",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "caso": "057 a Sin inferencias (3001)",
+      "esperado": "aparece el aviso informativo con el texto literal del mensaje; no aparece \"No se pudo cargar el historial\"; existen '.recharts-xAxis' y '.recharts-yAxis'; 0 puntos de línea; 1 marcador de evento; TVCO \"Sin datos suficientes para calcular\"; luego, con Desde=2026-01-01, sale una nueva petición con fecha_inicio=2026-01-01 y el aviso sigue visible",
+      "fuente": "RF-106 CA-13; Precondición 3",
+      "obtenido": "seleccion=ok; aviso_mensaje=true; sin_error=true; xAxis=true; yAxis=true; puntos=0; eventos=1; tvco=\"Sin datos suficientes para calcular\"; tras Desde=2026-01-01: peticion_fecha_inicio=2026-01-01, aviso_sigue_visible=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-07",
+      "caso": "057 b Fuente de eventos no disponible (3002)",
+      "esperado": "aviso \"Algunos datos no están disponibles en este momento\" cuyo detalle contiene \"Eventos sanitarios\"; 7 puntos; 4 valoraciones; 0 eventos; sin \"No se pudo cargar el historial\"",
+      "fuente": "RF-106 RNF-06; CA-13",
+      "obtenido": "seleccion=ok; aviso_parcial=true; detalle_eventos=true (texto=\"Algunos datos no están disponibles en este momento Eventos sanitarios\"); puntos=7; valoraciones=4; eventos=0; sin_error=true",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08",
+      "caso": "057 c Fuente de retroalimentación no disponible (3003)",
+      "esperado": "el mismo aviso con \"Retroalimentación clínica\" en el detalle; 7 puntos; 2 eventos; 0 valoraciones; sin \"No se pudo cargar el historial\"",
+      "fuente": "RF-106 RNF-06; CA-13",
+      "obtenido": "seleccion=ok; aviso_parcial=true; detalle_retro=true (texto=\"Algunos datos no están disponibles en este momento Retroalimentación clínica\"); puntos=7; eventos=2; valoraciones=0; sin_error=true",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "ADAPT-1 a ADAPT-4 (reintento 1): checkpoints, esperados y fuentes literales de la ronda 1. Cambia solo la forma de medir: eventos <rect> (a74c51cb), relleno var(--sem-error), texto de la valoracion sin su <title> ni el marcador hp-grupo, y valoraciones en la fecha de su prediccion (decision de Sebastian 2026-11-21, opcion B). Detalle en evidencias/DISENO_TC-M08-G020.md.",
+    "OBS-6: la marca de cada valoracion se dibuja sobre su prediccion (HistorialPredictivoView.tsx:96-99, 7297f934, QA M08 CU04 H-02). RF-106 Proceso 2.1 alinea las retroalimentaciones con \"ts = registro Veterinario\"; Proceso 3 las pone como \"marcadores sobre la linea\" y CA-8 (a) \"en esa posicion\". Decision de Sebastian 2026-11-21: se sigue la entrega (opcion B). Para los lideres.",
+    "OBS-7: el dominio del eje X se arma con new Date(`${fecha}T00:00:00`) y `T23:59:59.999` sin zona (HistorialPredictivoView.tsx:45-48): depende de la zona del equipo, como la hora de OBS-1. Medido con TZ=America/Bogota.",
+    "OBS-1: zona del proceso=America/Bogota; header X-Zona-Horaria enviado=America/Bogota; formatearFechaHora usa toLocaleString sin timeZone (src/shared/i18n/formato.ts:49): 2026-10-11T03:00:00Z en America/Bogota=\"10/10/26, 10:00 p. m.\", en UTC=\"11/10/26, 3:00 a. m.\". Decisión de Sebastian 2026-11-20: se acepta como lo maneja la app; para los líderes.",
+    "OBS-4: marcas del eje X en 885 (6): [\"20/11/2025\", \"01/02/2026\", \"15/04/2026\", \"27/06/2026\", \"08/09/2026\", \"20/11/2026\"]",
+    "OBS-5: en 3001 (un solo marcador de evento), x=719.8989071238078, Number.isFinite(x)=true",
+    "OBS-2: textos reales frente al CU04: en 3001 se muestra \"Este animal no tiene predicciones en el rango elegido. Prueba con otro rango de fechas; los eventos sanitarios registrados sí se muestran.\" (CU04: \"No se registran inferencias predictivas para este activo en el periodo seleccionado\"); en 3002 se muestra título=\"Algunos datos no están disponibles en este momento\" y detalle=\"Eventos sanitarios\" (CU04: \"Datos de eventos/retroalimentación temporalmente no disponibles\").",
+    "OBS-3: con 3004 (HTTP 500 ERROR_INTERNO): título=\"No se pudo cargar el historial\", detalle=\"Ocurrió un error interno.\""
+  ],
+  "retirados": []
+}

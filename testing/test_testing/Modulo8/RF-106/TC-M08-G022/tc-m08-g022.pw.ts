@@ -2,6 +2,7 @@
 // |------------|-------------------------|-------------|
 // | 2026-11-20 | Juan Sebastian Gutierrez | TC-M08-G022 (TC-M08-054, 055 y 056; RF-106): parte Playwright (CP-11 a CP-14); datos reales del 885 en TEST y conflicto simulado con page.route |
 // | 2026-11-20 | Juan Sebastian Gutierrez | v1.1: CP-14 decodifica la captura en una pestaña about:blank aparte (sin depender de la CSP de TEST) y exige además amarillos/no_blancos >= 0.2 |
+// | 2026-11-21 | Juan Sebastian Gutierrez | v1.3 reintento 1 (INC-M08-NN-G022, GitHub #726): checkpoints, esperados y fuentes literales. El icono se lee sin su <title> ni el marcador hp-grupo (ADAPT-1); CP-14 mide el amarillo contra el color de fondo real del recorte y no contra el blanco (ADAPT-2, pendiente de la ronda 1: la cuenta de TEST usa tema oscuro) y registra el tema |
 // | 2026-11-20 | Juan Sebastian Gutierrez | v1.2: las fechas simuladas de la parte B buscan la primera hora libre (a más de 1 h de toda predicción y entre sí); la corrida 20261120-223000 quedó inválida porque el 885 tiene una predicción 24 h después de la primera |
 //
 // QA SGPMP - Evaluacion (ronda 1). Navegador real (Chromium) contra el frontend desplegado en TEST, cuenta Veterinario 97,
@@ -219,7 +220,7 @@ async function tooltipEnRetro(page: Page, k: number, px: number, py: number): Pr
   await page.waitForTimeout(400);
   const texto = await page.evaluate((idx) => {
     const n = (s: string | null | undefined) => (s ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim();
-    const el = document.querySelectorAll('.recharts-scatter-symbol text')[idx];
+    const el = document.querySelectorAll('.recharts-scatter-symbol text:not(.hp-grupo)')[idx]; // ADAPT-1
     const simbolo = el?.closest('.recharts-scatter-symbol');
     const tip = document.querySelector('.recharts-tooltip-wrapper') as HTMLElement | null;
     const visible = tip && getComputedStyle(tip).visibility !== 'hidden' ? n(tip.innerText) : '';
@@ -236,15 +237,17 @@ async function tooltipEnRetro(page: Page, k: number, px: number, py: number): Pr
 }
 
 /** Cuenta pixeles amarillos y no blancos en el recorte de un marcador de retroalimentacion. */
-async function medirPixelesAmarillos(page: Page, k: number): Promise<{ texto: string; fill: string; amarillos: number; noBlancos: number }> {
-  const loc = page.locator('.recharts-scatter-symbol text').nth(k);
+async function medirPixelesAmarillos(page: Page, k: number): Promise<{ texto: string; fill: string; tema: string; amarillos: number; noBlancos: number; noFondo: number; fondo: string }> {
+  const loc = page.locator('.recharts-scatter-symbol text:not(.hp-grupo)').nth(k); // ADAPT-1
   const meta = await loc.evaluate((el) => ({
-    texto: (el.textContent ?? '').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim(),
+    // ADAPT-1: solo el texto propio del icono, sin su <title>.
+    texto: Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent ?? '').join('').replace(/[\u00A0\u202F]/g, ' ').replace(/\s+/g, ' ').trim(),
     fill: getComputedStyle(el).fill,
+    tema: document.documentElement.getAttribute('data-theme') ?? '(sin data-theme)',
   }));
   const box = await loc.boundingBox();
   if (!box || box.width <= 0 || box.height <= 0) {
-    return { ...meta, amarillos: 0, noBlancos: 0 };
+    return { ...meta, amarillos: 0, noBlancos: 0, noFondo: 0, fondo: '(sin recorte)' };
   }
   const clip = {
     x: Math.max(0, Math.floor(box.x) - 2),
@@ -254,7 +257,7 @@ async function medirPixelesAmarillos(page: Page, k: number): Promise<{ texto: st
   };
   const png = await page.screenshot({ clip, type: 'png' });
   const b64 = png.toString('base64');
-  let conteo = { amarillos: 0, noBlancos: 0 };
+  let conteo = { amarillos: 0, noBlancos: 0, noFondo: 0, fondo: '' };
   const lienzo = await page.context().newPage();
   try {
     conteo = await lienzo.evaluate(async (data) => {
@@ -270,19 +273,33 @@ async function medirPixelesAmarillos(page: Page, k: number): Promise<{ texto: st
     const ctx = canvas.getContext('2d')!;
     ctx.drawImage(img, 0, 0);
     const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    // ADAPT-2: el fondo es el color mas frecuente del borde del recorte (2 px alrededor del icono).
+    const W = canvas.width;
+    const H = canvas.height;
+    const frecuencia = new Map<string, number>();
+    for (let y = 0; y < H; y += 1) for (let x = 0; x < W; x += 1) {
+      if (x > 1 && x < W - 2 && y > 1 && y < H - 2) continue;
+      const i = (y * W + x) * 4;
+      const clave = `${px[i]},${px[i + 1]},${px[i + 2]}`;
+      frecuencia.set(clave, (frecuencia.get(clave) ?? 0) + 1);
+    }
+    const fondo = [...frecuencia].sort((a, b) => b[1] - a[1])[0]?.[0] ?? '255,255,255';
+    const [fr, fg, fb] = fondo.split(',').map(Number);
     let amarillos = 0;
     let noBlancos = 0;
+    let noFondo = 0;
     for (let i = 0; i < px.length; i += 4) {
       const r = px[i];
       const g = px[i + 1];
       const b = px[i + 2];
       if (r + g + b < 700) noBlancos += 1;
+      if (Math.abs(r - fr) + Math.abs(g - fg) + Math.abs(b - fb) > 60) noFondo += 1;
       if (r >= 170 && g >= 130 && b <= 120 && (r - b) >= 80 && (g - b) >= 50) amarillos += 1;
     }
-    return { amarillos, noBlancos };
+    return { amarillos, noBlancos, noFondo, fondo: `rgb(${fondo})` };
     }, b64);
   } catch (e) {
-    return { ...meta, fill: `${meta.fill}; error_decodificando=${String((e as Error)?.message ?? e).slice(0, 120)}`, amarillos: 0, noBlancos: 0 };
+    return { ...meta, fill: `${meta.fill}; error_decodificando=${String((e as Error)?.message ?? e).slice(0, 120)}`, amarillos: 0, noBlancos: 0, noFondo: 0, fondo: '(error)' };
   } finally {
     await lienzo.close();
   }
@@ -470,12 +487,12 @@ test('TC-M08-G022 parte navegador real (CP-11 a CP-14)', async ({ page }) => {
   await page.locator('.recharts-wrapper').first().scrollIntoViewIfNeeded();
   await esperarEstable(page);
 
-  const nRetrosDom = await page.locator('.recharts-scatter-symbol text').count();
+  const nRetrosDom = await page.locator('.recharts-scatter-symbol text:not(.hp-grupo)').count(); // ADAPT-1
   precondicion('Parte B: respuesta simulada servida (>=1) y 3 marcadores de retroalimentación dibujados', simuladas >= 1 && nRetrosDom === 3,
     `simuladas=${simuladas}; marcadores_retro=${nRetrosDom}; clase_0=${clase(hB.retroalimentaciones[0])}`);
 
   // -- CP-13: tooltip de conflicto en los dos marcadores en conflicto (indices 1 y 2)
-  const centros = await page.evaluate(() => Array.from(document.querySelectorAll('.recharts-scatter-symbol text')).map((el) => {
+  const centros = await page.evaluate(() => Array.from(document.querySelectorAll('.recharts-scatter-symbol text:not(.hp-grupo)')).map((el) => { // ADAPT-1
     const r = el.getBoundingClientRect();
     return { px: r.left + r.width / 2, py: r.top + r.height / 2 };
   }));
@@ -493,12 +510,13 @@ test('TC-M08-G022 parte navegador real (CP-11 a CP-14)', async ({ page }) => {
   // -- CP-14: triangulo amarillo por pixeles en los dos marcadores en conflicto (indices 1 y 2)
   const m1 = await medirPixelesAmarillos(page, 1);
   const m2 = await medirPixelesAmarillos(page, 2);
-  const amarillo = (m: { amarillos: number; noBlancos: number }) => m.amarillos >= 10 && m.noBlancos > 0 && m.amarillos / m.noBlancos >= 0.2;
+  // ADAPT-2: la proporcion se toma sobre los pixeles distintos del fondo real (en tema oscuro todo el recorte es "no blanco").
+  const amarillo = (m: { amarillos: number; noFondo: number }) => m.amarillos >= 10 && m.noFondo > 0 && m.amarillos / m.noFondo >= 0.2;
   const ok14 = amarillo(m1) && ICONOS_CONFLICTO.has(m1.texto) && amarillo(m2) && ICONOS_CONFLICTO.has(m2.texto);
   anotar(
     'CP-14',
     ok14,
-    `marcador[1]={texto="${m1.texto}", fill="${m1.fill}", amarillos=${m1.amarillos}, no_blancos=${m1.noBlancos}} | marcador[2]={texto="${m2.texto}", fill="${m2.fill}", amarillos=${m2.amarillos}, no_blancos=${m2.noBlancos}}`,
+    `tema=${m1.tema}; marcador[1]={texto="${m1.texto}", fill="${m1.fill}", fondo="${m1.fondo}", amarillos=${m1.amarillos}, distintos_del_fondo=${m1.noFondo}, no_blancos=${m1.noBlancos}} | marcador[2]={texto="${m2.texto}", fill="${m2.fill}", fondo="${m2.fondo}", amarillos=${m2.amarillos}, distintos_del_fondo=${m2.noFondo}, no_blancos=${m2.noBlancos}}`,
   );
 
   await captura(page, 'conflicto_simulado');

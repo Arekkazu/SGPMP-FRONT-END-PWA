@@ -1,0 +1,93 @@
+
+ RUN  v4.1.11 /home/claude/g020r1/fe
+
+ ✓ testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx > TC-M08-051 Línea de tiempo, marcadores y hora de Bogotá (RF-106 Proceso 3 y Restricción 5a) > CP-01 Línea por nivel de riesgo (885) 346ms
+ × testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx > TC-M08-051 Línea de tiempo, marcadores y hora de Bogotá (RF-106 Proceso 3 y Restricción 5a) > CP-02 Eventos sanitarios (885) 223ms
+   → seleccion=ok; eventos=0; fills=[]; max_error_pos_rel=N/A; x_ev2684=NaN, x_p2=705.87 (diff=NaN px): expected false to be true // Object.is equality
+ × testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx > TC-M08-051 Línea de tiempo, marcadores y hora de Bogotá (RF-106 Proceso 3 y Restricción 5a) > CP-03 Valoraciones (885) 237ms
+   → seleccion=ok; valoraciones=4; textos_por_x=["✓Vet QA → Correcta · 28/10/26, 7:00 a. m.", "✗Vet QA → Incorrecta · 29/10/26, 7:00 a. m.", "◐Vet QA → Parcial · 30/10/26, 7:00 a. m.", "○Vet QA → Sin evento · 31/10/26, 7:00 a. m."]: expected false to be true // Object.is equality
+ ✓ testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx > TC-M08-051 Línea de tiempo, marcadores y hora de Bogotá (RF-106 Proceso 3 y Restricción 5a) > CP-04 Hora de Bogotá (885) 190ms
+ ✓ testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx > TC-M08-051 Línea de tiempo, marcadores y hora de Bogotá (RF-106 Proceso 3 y Restricción 5a) > CP-05 Eje X en el rango seleccionado (885, rango por defecto 2025-11-20 a 2026-11-20) 197ms
+ × testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx > TC-M08-057 Estados vacíos o parciales del historial predictivo (RF-106 CA-13 y RNF-06) > CP-06 057 a Sin inferencias (3001) 397ms
+   → seleccion=ok; aviso_mensaje=true; sin_error=true; xAxis=true; yAxis=true; puntos=0; eventos=0; tvco="Sin datos suficientes para calcular"; tras Desde=2026-01-01: peticion_fecha_inicio=2026-01-01, aviso_sigue_visible=true: expected false to be true // Object.is equality
+ ✓ testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx > TC-M08-057 Estados vacíos o parciales del historial predictivo (RF-106 CA-13 y RNF-06) > CP-07 057 b Fuente de eventos no disponible (3002) 196ms
+stderr | testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx > TC-M08-057 Estados vacíos o parciales del historial predictivo (RF-106 CA-13 y RNF-06) > CP-08 057 c Fuente de retroalimentación no disponible (3003)
+[i18n] falta la clave "common:errores.por_codigo.ERROR_INTERNO" en es-CO — se muestra el espanol
+
+ × testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx > TC-M08-057 Estados vacíos o parciales del historial predictivo (RF-106 CA-13 y RNF-06) > CP-08 057 c Fuente de retroalimentación no disponible (3003) 347ms
+   → seleccion=ok; aviso_parcial=true; detalle_retro=true (texto="Algunos datos no están disponibles en este momento Retroalimentación clínica"); puntos=7; eventos=0; valoraciones=0; sin_error=true: expected false to be true // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx > TC-M08-051 Línea de tiempo, marcadores y hora de Bogotá (RF-106 Proceso 3 y Restricción 5a) > CP-02 Eventos sanitarios (885)
+AssertionError: seleccion=ok; eventos=0; fills=[]; max_error_pos_rel=N/A; x_ev2684=NaN, x_p2=705.87 (diff=NaN px): expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx:788:26
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx > TC-M08-051 Línea de tiempo, marcadores y hora de Bogotá (RF-106 Proceso 3 y Restricción 5a) > CP-03 Valoraciones (885)
+AssertionError: seleccion=ok; valoraciones=4; textos_por_x=["✓Vet QA → Correcta · 28/10/26, 7:00 a. m.", "✗Vet QA → Incorrecta · 29/10/26, 7:00 a. m.", "◐Vet QA → Parcial · 30/10/26, 7:00 a. m.", "○Vet QA → Sin evento · 31/10/26, 7:00 a. m."]: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx:806:26
+    804|     const obtenido = `seleccion=${errSel === '' ? 'ok' : `no se pudo (…
+    805|     anotar('CP-03', ok, obtenido);
+    806|     expect(ok, obtenido).toBe(true);
+       |                          ^
+    807|   });
+    808|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx > TC-M08-057 Estados vacíos o parciales del historial predictivo (RF-106 CA-13 y RNF-06) > CP-06 057 a Sin inferencias (3001)
+AssertionError: seleccion=ok; aviso_mensaje=true; sin_error=true; xAxis=true; yAxis=true; puntos=0; eventos=0; tvco="Sin datos suficientes para calcular"; tras Desde=2026-01-01: peticion_fecha_inicio=2026-01-01, aviso_sigue_visible=true: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx:925:26
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx > TC-M08-057 Estados vacíos o parciales del historial predictivo (RF-106 CA-13 y RNF-06) > CP-08 057 c Fuente de retroalimentación no disponible (3003)
+AssertionError: seleccion=ok; aviso_parcial=true; detalle_retro=true (texto="Algunos datos no están disponibles en este momento Retroalimentación clínica"); puntos=7; eventos=0; valoraciones=0; sin_error=true: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-106/TC-M08-G020/tc-m08-g020.test.tsx:1000:26
+    998|     );
+    999|
+    1000|     expect(ok, obtenido).toBe(true);
+       |                          ^
+    1001|   });
+    1002| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 4 passed (8)
+   Start at  18:54:01
+   Duration  4.96s (transform 1.55s, setup 99ms, import 2.26s, tests 2.14s, environment 344ms)
+

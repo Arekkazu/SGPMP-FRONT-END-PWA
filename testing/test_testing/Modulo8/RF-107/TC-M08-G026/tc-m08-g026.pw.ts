@@ -1,6 +1,9 @@
 // TC-M08-G026 - RF-107 parte Playwright (CP-21 a CP-24): lo que jsdom no puede medir (recarga real al cerrar
 // sesion, posicion de los avisos, forma del panel de historial e icono de sincronizacion con el modal critico).
 // QA SGPMP - Evaluacion (ronda 1). Navegador real contra el frontend desplegado en TEST, cuenta Veterinario 97.
+// Historial: 2026-11-22 Juan Sebastian Gutierrez - v1.1 reintento 1 (#706). ADAPT-4: las capturas enmascaran el avatar del
+//   AppBar (.ds-appbar__avatar) y el pie del menu lateral (.ds-sidebar__footer), no toda la zona .ds-appbar__right, que
+//   desde M8-14 contiene el icono de sincronizacion que mide CP-24. Checkpoints, esperados, fuentes y mediciones sin cambios.
 //
 // Sin escrituras en TEST:
 //   - Solo pasan al servidor los GET y la sesion (POST /sesiones/ una vez, POST /sesiones/refresh, DELETE /sesiones/).
@@ -54,7 +57,10 @@ function precondicion(nombre: string, ok: boolean, detalle: string): void {
 }
 function captura(page: Page, nombre: string): Promise<unknown> {
   if (!STAGING) return Promise.resolve();
-  return page.screenshot({ path: join(STAGING, `captura_${TC}_${nombre}.png`), mask: [page.locator('.ds-appbar__right')] });
+  return page.screenshot({
+    path: join(STAGING, `captura_${TC}_${nombre}.png`),
+    mask: [page.locator('.ds-appbar__avatar'), page.locator('.ds-sidebar__footer')],  // ADAPT-4
+  });
 }
 
 // ---------------------------------------------------------------------------------------------------------------

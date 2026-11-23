@@ -1,0 +1,165 @@
+{
+  "tc": "TC-M08-G024",
+  "reintento": 1,
+  "run_id": "prueba-normal_2",
+  "fecha": "2026-11-22T17:10:56.242Z",
+  "ambiente": "http://127.0.0.1:4173/sigab-test/",
+  "summary": {
+    "total": 6,
+    "ok": 4,
+    "falla": 2,
+    "veredicto": "Rechazado"
+  },
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "caso": "TC-M08-060, Chromium, 365 días (500 marcadores)",
+      "esperado": "La línea de tiempo queda dibujada completa (365 predicciones, 135 eventos y valoraciones) en <= 3.000 ms en cada una de 3 mediciones",
+      "fuente": "RF-106 CA-1; RNF-01",
+      "obtenido": "mediciones=[206, 180, 193] ms (mediana 193), completas=3/3, 365/365, 135/135, navegador=Chromium 153.0.8010.12",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "caso": "TC-M08-060, Chromium, 1.000 eventos combinados",
+      "esperado": "La línea de tiempo queda dibujada completa (730 predicciones, 270 eventos y valoraciones) en <= 3.000 ms en cada una de 3 mediciones",
+      "fuente": "RF-106 RNF-01",
+      "obtenido": "mediciones=[513, 637, 503] ms (mediana 513), completas=3/3, 730/730, 270/270, navegador=Chromium 153.0.8010.12",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "caso": "TC-M08-060, WebKit, 365 días",
+      "esperado": "La línea de tiempo queda dibujada completa (365 predicciones, 135 eventos y valoraciones) en <= 3.000 ms en cada una de 3 mediciones",
+      "fuente": "RF-106 CA-1; RNF-01; TC-M08-060 (Chromium y WebKit)",
+      "obtenido": "No alcanzado",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-04",
+      "caso": "TC-M08-060, WebKit, 1.000 eventos combinados",
+      "esperado": "La línea de tiempo queda dibujada completa (730 predicciones, 270 eventos y valoraciones) en <= 3.000 ms en cada una de 3 mediciones",
+      "fuente": "RF-106 RNF-01; TC-M08-060 (Chromium y WebKit)",
+      "obtenido": "No alcanzado",
+      "estado": "FALLA"
+    },
+    {
+      "paso": "CP-05",
+      "caso": "TC-M08-060, zoom y scroll (existencia)",
+      "esperado": "La gráfica ofrece zoom o desplazamiento: un Brush de recharts, la rueda del ratón cambia el rango del eje X, un contenedor con desplazamiento horizontal o botones de zoom",
+      "fuente": "RF-106 RNF-02 (solo existencia; decisión de Sebastian 2026-11-21)",
+      "obtenido": "brush=0, botones_zoom=2, scroll_horizontal=0, etiquetas_cambian=false, antes=[22/11/2025, 03/02/2026, 17/04/2026, 29/06/2026, 10/09/2026, 22/11/2026], despues=[22/11/2025, 03/02/2026, 17/04/2026, 29/06/2026, 10/09/2026, 22/11/2026]",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "caso": "TC-M08-060, más de 1.000 eventos (2.000)",
+      "esperado": "Con 2.000 eventos la gráfica pagina (controles propios de la gráfica) o virtualiza (dibuja menos marcadores que los recibidos)",
+      "fuente": "RF-106 RNF-05 (solo existencia; decisión de Sebastian 2026-11-21)",
+      "obtenido": "dibujados=905 de recibidos=2000 (365/1460, 540/540), paginador=0 []",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "RNF-02 y RNF-05 no definen un criterio medible; CP-05 y CP-06 solo verifican la existencia del mecanismo (decisión de Sebastian, 2026-11-21).",
+    "El detalle por marcador al pasar el ratón (un <title> en cada marcador) se evalúa en G021 y G022 (corregido en sus reintentos 1); G024 no lo mide.",
+    "885 real: 6/6 predicciones y 1/1 eventos+valoraciones, dibujado=141 ms, duración GET=14 ms.",
+    "Hover (20 movimientos en Chromium con 1.000 eventos): mediana=50 ms, maximo=51 ms.",
+    "Con 2.000 marcadores: avisos de la gráfica=[\"Hay demasiadas predicciones para dibujarlas todas: se muestran 365 de 1460. Acerca la línea de tiempo para ver el resto.\"]; botones de la línea de tiempo=[\"Antes (deshabilitado)\",\"Acercar\",\"Alejar (deshabilitado)\",\"Después (deshabilitado)\",\"Ver todo el rango (deshabilitado)\"]."
+  ],
+  "retirados": [
+    {
+      "paso": "TC-M08-060: tiempo de carga con 365 días de historial real (backend incluido)",
+      "motivo": "TEST no tiene un activo con 365 días de historial; el caso pide respuestas simuladas. Se mide el frontend desplegado con la respuesta simulada (page.route); el tiempo real del backend con el 885 (24 predicciones) va como observación"
+    }
+  ],
+  "precondiciones": [
+    {
+      "nombre": "Credenciales del Veterinario en memoria",
+      "ok": true,
+      "detalle": "QA_VET_EMAIL / QA_VET_PASSWORD presentes"
+    },
+    {
+      "nombre": "Login del Veterinario 97 (una sola vez)",
+      "ok": true,
+      "detalle": "URL tras el login: /sigab-test/dashboard"
+    },
+    {
+      "nombre": "El activo 885 figura entre los animales o lotes del Veterinario",
+      "ok": true,
+      "detalle": "1 opciones"
+    },
+    {
+      "nombre": "GET real /historial-predictivo/885 responde 200",
+      "ok": true,
+      "detalle": "HTTP 200"
+    },
+    {
+      "nombre": "Respuestas simuladas servidas en Chromium (365d=3, 1000=3)",
+      "ok": true,
+      "detalle": "365d=3, 1000=3"
+    },
+    {
+      "nombre": "Respuesta simulada 2000 servida en Chromium",
+      "ok": true,
+      "detalle": "2000=1"
+    },
+    {
+      "nombre": "Ninguna escritura no permitida hacia TEST",
+      "ok": true,
+      "detalle": "10 peticiones distintas de GET, todas permitidas"
+    }
+  ],
+  "escrituras": [
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/",
+      "resultado": "al servidor (login 1)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    },
+    {
+      "metodo": "POST",
+      "ruta": "/sigab-test/api/sesiones/refresh",
+      "resultado": "al servidor (sesion)"
+    }
+  ]
+}
