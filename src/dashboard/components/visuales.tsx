@@ -3,6 +3,7 @@
 // | 2026-11-14 | Arekkazu | M08 RF-103: cómo se dibuja cada widget (semáforo, cifras, listas…)  |
 // | 2026-11-19 | Arekkazu | M8-16 RF-103: plurales correctos y nombres de área completos en el semáforo |
 // | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-278..280 RF-103: alertas por área, barras con estado y tabla alternativa, íconos de estado |
+// | 2026-11-23 | Arekkazu | QA-M08 CU01 H-03 RF-103: el nombre del área ocupa su línea; estado y alertas van debajo |
 import React, { Suspense, lazy } from 'react';
 import { AlertTriangle, Ban, CheckCircle2, CircleSlash, Clock, OctagonAlert, Power, Radio, Stethoscope, Wrench } from 'lucide-react';
 import { useT } from '../../shared/i18n/useT';
@@ -45,15 +46,19 @@ function Semaforo({ datos }: { datos: Datos }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--s3)' }}>
       <EstadoSemaforo estado={peor} grande />
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 6,
-        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 'var(--s3)',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
         {areas.map((a) => (
-          <li key={String(a.id_infraestructura)} style={{ display: 'flex', justifyContent: 'space-between', gap: 6,
-            alignItems: 'center', fontSize: 13, color: 'var(--text-secondary)' }}>
-            <span style={{ overflowWrap: 'anywhere' }}>{texto(a.nombre)}</span>
-            {/* 1.1.1 / 4.1.2 (TC-DIS-278): cuántas alertas tiene, no solo el color del estado. */}
-            {alertasDe(a) > 0 && <span style={{ fontSize: 12, whiteSpace: 'nowrap', marginLeft: 'auto' }}>{t('semaforo.alertas', { count: alertasDe(a) })}</span>}
-            <EstadoSemaforo estado={String(a.estado)} />
+          // CU01 H-03: en una sola fila con el estado y las alertas, el nombre quedaba con unos pocos píxeles y se
+          // partía letra a letra. Ahora tiene su propia línea y solo corta dentro de una palabra más ancha que la celda.
+          <li key={String(a.id_infraestructura)} style={{ display: 'flex', flexDirection: 'column', gap: 4,
+            fontSize: 13, color: 'var(--text-secondary)' }}>
+            <span style={{ overflowWrap: 'break-word', color: 'var(--text-primary)' }}>{texto(a.nombre)}</span>
+            <span style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+              <EstadoSemaforo estado={String(a.estado)} />
+              {/* 1.1.1 / 4.1.2 (TC-DIS-278): cuántas alertas tiene, no solo el color del estado. */}
+              {alertasDe(a) > 0 && <span style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{t('semaforo.alertas', { count: alertasDe(a) })}</span>}
+            </span>
           </li>
         ))}
       </ul>

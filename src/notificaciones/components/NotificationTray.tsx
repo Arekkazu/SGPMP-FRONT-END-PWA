@@ -3,12 +3,14 @@
 // | 2026-11-14 | Arekkazu | M08 RF-105: nivel, ocurrencias, filtros, atender con acción y descartar  |
 // | 2026-11-20 | Arekkazu | QA-M08 CU03 H-02/H-03 RF-105/107: un solo estado del push y nivel con ícono en todos los avisos |
 // | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-289..291 RF-105: lista, «sin leer» en texto, foco, anuncios, limpiar filtros y archivadas |
+// | 2026-11-23 | Arekkazu | QA-M08 CU05 H-04 RF-107: atender una notificación muestra el aviso de éxito con sus datos |
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatearFechaHora } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
 import { AlertOctagon, AlertTriangle, Bell, BellRing, Check, CircleDot, FilterX, Info, RefreshCw, X } from 'lucide-react';
 import { Button } from '../../shared/design-system/Button';
+import { pushToast } from '../../shared/hooks/useToast';
 import type { PushPermission } from '../hooks/usePushNotifications';
 import { MODULOS_NOTIFICACION, type NotificacionInternaResponse } from '../types';
 import type { FiltrosBandeja } from '../hooks/useNotificaciones';
@@ -100,12 +102,12 @@ function CierreNotificacion({ notificacion, onAtender, onDescartar, onResuelta }
   const [enviando, setEnviando] = useState(false);
   const critica = notificacion.nivel === 'CRITICA';
   const id = notificacion.id_notificacion;
-  const ejecutar = async (fn: () => Promise<string | null>, resultado: string) => {
+  const ejecutar = async (fn: () => Promise<string | null>, resultado: string, alTerminar?: () => void) => {
     setEnviando(true);
     const rechazo = await fn();
     setEnviando(false);
     setError(rechazo);
-    if (!rechazo) { setAbierto(false); onResuelta?.(resultado); }
+    if (!rechazo) { setAbierto(false); onResuelta?.(resultado); alTerminar?.(); }
   };
   if (!notificacion.puede_atenderse || !onAtender) return null;
   return (
@@ -122,7 +124,11 @@ function CierreNotificacion({ notificacion, onAtender, onDescartar, onResuelta }
           {error && <span id={`accion-error-${id}`} role="alert" style={{ fontSize: 12, color: 'var(--sem-error)' }}>{error}</span>}
           <div style={{ display: 'flex', gap: 6 }}>
             <Button type="button" variant="primary" size="sm" loading={enviando}
-              onClick={() => void ejecutar(() => onAtender(id, accion), t('notificationtray.atendida_listo'))}>{t('notificationtray.confirmar_atendida')}</Button>
+              onClick={() => void ejecutar(() => onAtender(id, accion), t('notificationtray.atendida_listo'), () =>
+                // CU05 H-04 (RF-107 CA-01, CA-09): confirmación visible con los datos de la alerta atendida.
+                pushToast('success', t('notificationtray.atendida_listo'), accion.trim()
+                  ? t('notificationtray.atendida_detalle', { mensaje: notificacion.mensaje, accion: accion.trim() })
+                  : notificacion.mensaje))}>{t('notificationtray.confirmar_atendida')}</Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => { setAbierto(false); setError(null); }}>
               {t('notificationtray.cancelar')}
             </Button>

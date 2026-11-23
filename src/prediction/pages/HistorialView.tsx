@@ -6,6 +6,7 @@
 // | 2026-11-02 | Arekkazu | AJF-09 RF-67: aviso de inmutabilidad sin la norma NIC 41 y en i18n |
 // | 2026-11-03 | Arekkazu | QA-M04 ronda 2 CU04 H-01/H-03 RF-67: detalle de la inferencia y filtro con todas las patologías |
 // | 2026-11-22 | Arekkazu | A11Y2-M08 TC-DIS-282..285 RF-106: tabla con evento sanitario, retroalimentación y conflicto; vista, zoom, TVCO, CSV y anuncios |
+// | 2026-11-23 | Arekkazu | QA-M08 ronda 3 RF-106: «Consultar» vuelve a consultar (recibía el evento del clic como filtros) |
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatearFecha } from '../../shared/i18n/formato';
 import { useT } from '../../shared/i18n/useT';
@@ -249,7 +250,7 @@ export function HistorialView() {
           activosError={activosError}
           patologias={patologiasOpciones}
           onChange={setFiltros}
-          onConsultar={consultarHistorial}
+          onConsultar={() => consultarHistorial()}
           onLimpiar={onLimpiar}
           loading={loading}
         />
