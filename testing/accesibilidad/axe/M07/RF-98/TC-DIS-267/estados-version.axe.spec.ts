@@ -1,6 +1,7 @@
 // | Fecha      | Nombre      | Que se hizo                                                          |
 // |------------|-------------|----------------------------------------------------------------------|
 // | 2026-11-17 | Laura032005 | TC-DIS-267 RF-98: estados de versión del contrato con texto e ícono  |
+// | 2026-11-22 | SaraSofGonzalez | TC-DIS-267 RF-98: el recorrido de foco no cuenta <body> cuando el Tab sale de la página |
 /**
  * TC-DIS-267 — Verificar accesibilidad WCAG 2.1 AA de los estados de versión del contrato de integración
  * (Pendiente / Activa / Deprecada / Inactiva) con texto y no solo color
@@ -102,7 +103,12 @@ test.describe('TC-DIS-267 — Estados de versión del contrato', () => {
     const recorrido = await recorrerConTab(page, 14);
     anotar(testInfo, 'Recorrido con Tab', recorrido.join(' → '));
     const sinFoco: string[] = [];
-    for (let i = 0; i < 6; i++) { await page.keyboard.press('Tab'); if (!(await focoVisible(page))) sinFoco.push(String(i)); }
+    for (let i = 0; i < 6; i++) {
+      await page.keyboard.press('Tab');
+      // Al final de la página el Tab pasa a la interfaz del navegador y el foco queda en <body>: no es un control.
+      if (await page.evaluate(() => document.activeElement === document.body)) continue;
+      if (!(await focoVisible(page))) sinFoco.push(String(i));
+    }
     expect.soft(sinFoco, '2.4.7: controles sin indicador de foco visible').toEqual([]);
     const detalle = await tablaVersiones().locator('tbody tr').first().locator('a, button[aria-expanded], [role="button"]').count()
       + await tablaVersiones().locator('tbody tr[tabindex]').count();
