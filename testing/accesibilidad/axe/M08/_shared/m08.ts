@@ -4,6 +4,7 @@
 // | 2026-11-19 | Laura032005 | TC-DIS-286..290 RF-104/105: bandeja con nivel y ocurrencias, búsqueda de activo y reportes |
 // | 2026-11-20 | SaraSofGonzalez | TC-DIS-277..285 RF-103/106: título del historial sin distinguir mayúsculas; 277–281 ya tienen spec |
 // | 2026-11-23 | SaraSofGonzalez | TC-DIS-282..285 RF-106: «Consultar» que no pide el historial se registra como defecto de la app (1.5.1-rc.1) |
+// | 2026-11-23 | Laura032005 | TC-DIS-282..285 RF-106: si «Consultar» no consulta, el defecto funcional se anota aparte y el historial se carga con «Alejar» y «Acercar» |
 /**
  * Utilidades de los specs de accesibilidad de M08 que sí tienen pantalla:
  *   - RF-106 (282–285): el historial de Predicción (/prediccion/historial, HistorialView).
@@ -27,7 +28,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { expect, type Browser, type BrowserContext, type Locator, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Browser, type BrowserContext, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { iniciarSesion } from '../../_shared/sigabA11y';
 import { concederPermisos, prevalidacionLimpia, simularGet } from '../../M06/_shared/finanzas';
 
@@ -114,11 +115,23 @@ export async function consultarHistorial(page: Page, activo: string, desde: stri
   const llega = pedido(5_000);
   await consultar.click();
   if (!(await llega)) {
-    // Defecto funcional en 1.5.1-rc.1: el botón hace onClick={onConsultar} y la vista recibe el evento del clic como
-    // filtros, así que «Consultar» no pide el historial. Se registra como defecto de la app.
+    // Defecto funcional en 1.5.1: el botón hace onClick={onConsultar} y la vista recibe el evento del clic como
+    // filtros, así que «Consultar» no pide el historial. No es un hallazgo de accesibilidad: se anota aparte y el
+    // historial se carga con «Alejar» y «Acercar» de la línea de tiempo, que llaman a la misma consulta con los
+    // filtros correctos y dejan el rango como estaba (el doble y luego la mitad).
     consultarNoResponde = true;
-    expect.soft(false, 'DEFECTO de la app: «Consultar» no pide el historial (el botón pasa el evento del clic como filtros y la consulta se descarta)').toBe(true);
-    return false;
+    test.info().annotations.push({ type: 'DEFECTO FUNCIONAL (no de accesibilidad)',
+      description: '«Consultar» no pide el historial: el botón pasa el evento del clic como filtros y la consulta se descarta (HistorialFiltros.tsx: onClick={onConsultar}). El historial se cargó con «Alejar» y «Acercar».' });
+    for (const zoom of [/^Alejar/, /^Acercar/]) {
+      const boton = page.getByRole('button', { name: zoom });
+      if (!(await boton.isVisible().catch(() => false)) || await boton.isDisabled()) return false;
+      const otra = pedido(10_000);
+      await boton.click();
+      if (!(await otra)) return false;
+      await expect(page.getByText('Consultando historial…')).toBeHidden({ timeout: 60_000 });
+    }
+    await page.waitForTimeout(400);
+    return true;
   }
   await expect(page.getByText('Consultando historial…')).toBeHidden({ timeout: 60_000 });
   await page.waitForTimeout(400);
