@@ -1,6 +1,7 @@
 # | Fecha      | Nombre                   | Que se hizo |
 # |------------|--------------------------|-------------|
 # | 2026-11-21 | Juan Sebastian Gutierrez | Runner de TC-M08-G031 (RF-107, TC-M08-071): Vitest en staging con TZ=America/Bogota, JSON propio, sin tocar resultados\, escaneo al final con reescaneo. Base: runner de G028 |
+# | 2026-11-22 | Juan Sebastian Gutierrez | Reintento 1 (INC-M08-394-G031): Button, db, useModalA11y, operacionEnCurso y useToast en la lista de SHA; estado de src sin contar finales de linea (git diff --ignore-cr-at-eol --numstat). Mismos 11 checkpoints |
 #
 # Uso (desde la carpeta del caso, PowerShell 5.1):
 #   .\ejecutar_tc_m08_g031.ps1                (ronda 1)
@@ -71,6 +72,11 @@ $fuentes = @(
   'src\shared\sync\syncQueue.ts',
   'src\shared\hooks\useOnlineStatus.ts',
   'src\shared\design-system\ModalShell.tsx',
+  'src\shared\design-system\Button.tsx',
+  'src\shared\db\db.ts',
+  'src\shared\hooks\useModalA11y.ts',
+  'src\shared\hooks\operacionEnCurso.ts',
+  'src\shared\hooks\useToast.ts',
   'src\shared\i18n\formato.ts',
   'src\shared\i18n\locales\es-CO\common.json'
 )
@@ -88,8 +94,8 @@ if ($git) {
   try {
     $ErrorActionPreference = 'Continue'
     $gitHead = (& git rev-parse HEAD 2>$null | Out-String).Trim()
-    $cambios = @(& git status --porcelain -- src 2>$null)
-    $gitSrc = if ($cambios.Count -eq 0) { 'src sin cambios locales' } else { "src con $($cambios.Count) cambio(s) locales: " + ($cambios -join '; ') }
+    $cambios = @(& git diff --ignore-cr-at-eol --numstat HEAD -- src 2>$null | Where-Object { $_ })
+    $gitSrc = if ($cambios.Count -eq 0) { 'src sin cambios locales (sin contar finales de linea)' } else { "src con $($cambios.Count) cambio(s) locales (sin contar finales de linea): " + ($cambios -join '; ') }
   } finally {
     $ErrorActionPreference = 'Stop'
     Pop-Location

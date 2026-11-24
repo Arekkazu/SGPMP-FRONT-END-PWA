@@ -1,0 +1,84 @@
+
+ RUN  v4.1.11 /home/claude/g031r1/fe
+
+[QA_MUTACION] cierre_no_bloqueante aplicado en src/financial_valuation/pages/CierreView.tsx
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-068 Confirmacion de acciones criticas y accion no critica (RF-107 8.1) > CP-01 Baja: confirmacion previa, cancelar sin POST y confirmar ejecuta exactamente 1 POST 181ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-068 Confirmacion de acciones criticas y accion no critica (RF-107 8.1) > CP-02 Reversion: dialogo previo, cancelar sin POST y confirmar ejecuta exactamente 1 POST 56ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-068 Confirmacion de acciones criticas y accion no critica (RF-107 8.1) > CP-03 Cierre: dialogo previo, cancelar sin POST y confirmar ejecuta exactamente 1 POST 78ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-068 Confirmacion de acciones criticas y accion no critica (RF-107 8.1) > CP-04 Revocacion: dialogo previo, cancelar sin POST y confirmar ejecuta exactamente 1 POST 41ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-068 Confirmacion de acciones criticas y accion no critica (RF-107 8.1) > CP-05 Accion no critica (Exportar en PDF): 0 dialogos y exactamente 1 POST /reportes 34ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Contenido de dialogos de confirmacion (RF-107 8.5) > CP-06 y CP-08 Dialogo del cierre: periodo y advertencia de irreversibilidad 24ms
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Contenido de dialogos de confirmacion (RF-107 8.5) > CP-09 Reversion y revocacion: nombran lo afectado y advierten irreversibilidad 28ms
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Restricciones de cierre bloqueante (RF-107 8.5 y CA-05) > CP-10 Escape en reversion, cierre y revocacion: los 3 siguen abiertos y 0 POST 111ms
+   → expected false to be true // Object.is equality
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Restricciones de cierre bloqueante (RF-107 8.5 y CA-05) > CP-11 Clic en el fondo del dialogo en los 4 dialogos: los 4 siguen abiertos y 0 POST 90ms
+   → expected false to be true // Object.is equality
+ × testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Restricciones de cierre bloqueante (RF-107 8.5 y CA-05) > CP-12 Ninguno de los 4 dialogos tiene el boton X (acciones.cerrar) 94ms
+   → expected false to be true // Object.is equality
+ ✓ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Restricciones de cierre bloqueante (RF-107 8.5 y CA-05) > CP-13 Con cada uno de los 4 dialogos abiertos, avanzar 600.000 ms: siguen abiertos y 0 POST 81ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Restricciones de cierre bloqueante (RF-107 8.5 y CA-05) > CP-10 Escape en reversion, cierre y revocacion: los 3 siguen abiertos y 0 POST
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx:1005:20
+    1003|
+    1004|     anotar('CP-10', todoOk, detalles.join('; '));
+    1005|     expect(todoOk).toBe(true);
+       |                    ^
+    1006|   });
+    1007|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Restricciones de cierre bloqueante (RF-107 8.5 y CA-05) > CP-11 Clic en el fondo del dialogo en los 4 dialogos: los 4 siguen abiertos y 0 POST
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx:1041:20
+    1039|
+    1040|     anotar('CP-11', todoOk, detalles.join('; '));
+    1041|     expect(todoOk).toBe(true);
+       |                    ^
+    1042|   });
+    1043|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx > TC-M08-069 Restricciones de cierre bloqueante (RF-107 8.5 y CA-05) > CP-12 Ninguno de los 4 dialogos tiene el boton X (acciones.cerrar)
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ testing/test_testing/Modulo8/RF-107/TC-M08-G028/tc-m08-g028.test.tsx:1069:20
+    1067|
+    1068|     anotar('CP-12', todoOk, detalles.join('; '));
+    1069|     expect(todoOk).toBe(true);
+       |                    ^
+    1070|   });
+    1071|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 8 passed (11)
+   Start at  05:52:32
+   Duration  2.23s (transform 679ms, setup 58ms, import 1.01s, tests 850ms, environment 219ms)
+

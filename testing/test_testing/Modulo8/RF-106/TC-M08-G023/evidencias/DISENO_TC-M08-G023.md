@@ -128,3 +128,32 @@ Se ejecutaron 6 corridas locales contra los mismos builds en `node_modules/.cach
 | `playwright.config.ts` | `75C66F3DDD32E09133C68351D6512EA8DD7DD7A2D78DF1A9BE4B007DC7194B4E` |
 | `ejecutar_tc_m08_g023.ps1` | `90BECD0FE59138BCECF19B3EDD423AEA003B646A89157FA4BCC5812A536F0122` |
 | `resultados\.gitkeep` | `E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855` |
+
+
+## Reintento 1 (2026-11-23, INC-M08-390-G023, GitHub 727)
+
+| Fecha | Autor | Qué se hizo |
+|---|---|---|
+| 2026-11-23 | Juan Sebastian Gutierrez | Fase 1 y 2 del reintento 1: spec v1.2 (5 checkpoints) y runner con lista explícita de ids; prueba de la herramienta en `prueba_herramienta_reintento1/` |
+
+**Respaldo de la ronda 1:** `fuentes_generador/ronda1/*.txt` (spec `116BFB19…`, config `75C66F3D…`, runner `90BECD0F…`, DISENO `6068B648…`) y `$HOME/respaldo_g023_ronda1/` de la VM. Los controles de la ronda 1 se copiaron a `node_modules\.cache\qa_g023_r1\` para traerlos al contenedor (están a 8 carpetas de la conectada).
+
+**Código observado:** frontend `test-JuanSG` HEAD `f10009d5` (`src` sin cambios salvo finales de línea); TEST bundle `index-BsxWgc0X.js` (chunk `PrediccionPage-CQ8NWQBg.js`). `RetroalimentacionView.tsx` (a74c51cb) manda `id_resultado_inferencia` a la bandeja y muestra un aviso si la predicción pedida no llega. Backend `bf3e5aeb`: la bandeja no acepta `id_resultado_inferencia` (router :153-160; openapi de TEST igual).
+
+**Checkpoints del reintento 1 (5):** CP-01, CP-03, CP-04, CP-05 y CP-06, con el esperado, la fuente y la medición de la ronda 1. La línea base exige pendientes (≥ 2) y uno de nivel ≥ 2 dentro de la ventana; CP-05 cuenta las peticiones distintas de GET del clic de CP-01.
+
+**Spec v1.2:** cambios solo de alcance (comparable con el respaldo de la ronda 1 en `fuentes_generador/ronda1/`). **Runner:** 5 ids explícitos (rechaza ids de más o de menos); estado de `src` con `git diff --ignore-cr-at-eol --numstat`; el escaneo ya iba al final.
+
+**Prueba de la herramienta** (contenedor: build local de `f10009d5` con `VITE_BASE_PATH=/sigab-test/` y la API simulada de la ronda 1, Chromium `/usr/bin/google-chrome`, Playwright 1.65.1; un mock nuevo por corrida):
+
+| Corrida | Build / escenario | Resultado | Previsto |
+|---|---|---|---|
+| `normal_1` a `normal_3` | base / `normal` | 5/5 | Sí |
+| `control_post` | `vite.control_post` / `normal` | FALLA CP-03 (body `PARCIAL`) | Sí |
+| `control_inferencias` | `vite.control_inferencias` / `normal` | FALLA CP-04 (2 GET a `/prediccion/inferencias`) | Sí |
+| `control_vista_valoracion` | `vite.control_vista_valoracion` / `normal` | FALLA CP-05 (radiogroup y «Correcto») | Sí |
+| `cambia_al_volver_cache` | `vite.control_cache` / `cambia_al_volver` | FALLA CP-06 (pantalla ≠ respuesta) | Sí |
+| `bandeja_sin_alto` | base / `bandeja_sin_alto` | FALLA CP-01 y CP-03 | Sí |
+| `control_sin_simulacion` | base / `normal`, spec sin la simulación del POST | precondición de escrituras falsa (todo FALLA); el mock no recibió el POST | Sí |
+
+Los 4 builds de control compilan con la guarda «el texto viejo aparece 1 vez», así que las mutaciones siguen aplicando sobre `f10009d5`. Nota de la herramienta: en un primer intento el mock de la corrida anterior siguió vivo en el puerto y los controles no se aplicaron (todo 5/5); se corrigió el lanzador (`exec` y comprobación de arranque) y se repitió todo.

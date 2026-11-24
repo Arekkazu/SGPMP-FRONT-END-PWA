@@ -1,0 +1,35 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 [chromium] › testing/test_testing/Modulo8/RF-106/TC-M08-G023/tc-m08-g023.pw.ts:292:1 › TC-M08-G023 navegador real (5 checkpoints) (31.0s)
+
+
+  1) [chromium] › testing/test_testing/Modulo8/RF-106/TC-M08-G023/tc-m08-g023.pw.ts:292:1 › TC-M08-G023 navegador real (5 checkpoints) 
+
+    Error: POST /sigab-test/api/prediccion/retroalimentacion
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "POST /sigab-test/api/prediccion/retroalimentacion",
+    + ]
+
+      592 |
+      593 |   // -- 11. Verificacion final
+    > 594 |   expect(violaciones, violaciones.join('; ')).toEqual([]);
+          |                                               ^
+      595 |   expect(CPS.every((c) => c.estado === 'OK'), CPS.filter((c) => c.estado === 'FALLA').map((c) => c.paso).join(', ')).toBe(true);
+      596 | });
+      597 |
+        at /home/claude/g031r1/fe/testing/test_testing/Modulo8/RF-106/TC-M08-G023/tc-m08-g023.pw.ts:594:47
+
+    Error Context: ../../g023r1/salidas/control_sin_simulacion/pw-salida/tc-m08-g023.pw.ts-TC-M08-G023-navegador-real-5-checkpoints--chromium/error-context.md
+
+    Error Context: ../../g023r1/salidas/control_sin_simulacion/pw-salida/tc-m08-g023.pw.ts-TC-M08-G023-navegador-real-5-checkpoints--chromium/error-context.md
+
+  1 failed
+    [chromium] › testing/test_testing/Modulo8/RF-106/TC-M08-G023/tc-m08-g023.pw.ts:292:1 › TC-M08-G023 navegador real (5 checkpoints) 

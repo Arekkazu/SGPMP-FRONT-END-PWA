@@ -1,0 +1,82 @@
+[
+  {
+    "control": "tvco_solo_porcentaje",
+    "exit": 1,
+    "precondiciones_ok": true,
+    "fallas": [
+      "CP-01",
+      "CP-03",
+      "CP-04",
+      "CP-05",
+      "CP-07",
+      "CP-08"
+    ],
+    "esperadas": [
+      "CP-01",
+      "CP-03",
+      "CP-04",
+      "CP-05",
+      "CP-07",
+      "CP-08"
+    ],
+    "no_alcanzado": [],
+    "como_previsto": true,
+    "obtenidos_falla": {
+      "CP-01": "75%",
+      "CP-03": "50%",
+      "CP-04": "TVCO=\"%\"; prohibidos=[]",
+      "CP-05": "5004: \"0%\" | 5005: \"100%\"",
+      "CP-07": "TVCO=\"100%\"; conflictos=\"1 con evaluaciones contradictorias\"",
+      "CP-08": "iconos=[\"✓\", \"✓\"]; TVCO=\"100%\"; conflictos=\"0 con evaluaciones contradictorias\""
+    }
+  },
+  {
+    "control": "conflicto_sin_icono",
+    "exit": 1,
+    "precondiciones_ok": true,
+    "fallas": [
+      "CP-06"
+    ],
+    "esperadas": [
+      "CP-06"
+    ],
+    "no_alcanzado": [],
+    "como_previsto": true,
+    "obtenidos_falla": {
+      "CP-06": "iconos=[\"✓\", \"✓\", \"✗\"] (total=3)"
+    }
+  },
+  {
+    "control": "pendientes_invertidos",
+    "exit": 1,
+    "precondiciones_ok": true,
+    "fallas": [
+      "CP-09"
+    ],
+    "esperadas": [
+      "CP-09",
+      "CP-10"
+    ],
+    "no_alcanzado": [],
+    "como_previsto": false,
+    "obtenidos_falla": {
+      "CP-09": "conteo=20; sin_riesgo=true; bajo=true; condiciones=[QA-5008-P17, QA-5008-P18, QA-5008-P19, QA-5008-P20, QA-5008-P21, QA-5008-P11, QA-5008-P12, QA-5008-P13, QA-5008-P14, QA-5008-P15, QA-5008-P6, QA-5008-P7, QA-5008-P8, QA"
+    }
+  },
+  {
+    "control": "siguiente_no_pagina",
+    "exit": 1,
+    "precondiciones_ok": true,
+    "fallas": [
+      "CP-10"
+    ],
+    "esperadas": [
+      "CP-10"
+    ],
+    "no_alcanzado": [],
+    "como_previsto": true,
+    "obtenidos_falla": {
+      "CP-10": "siguiente: error=expected false to be true // Object.is equality | anterior: uri=\"\", items=0"
+    }
+  }
+]

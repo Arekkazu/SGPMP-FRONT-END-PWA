@@ -1,12 +1,16 @@
 // TC-M08-G025 - RF-107 Mensajes de exito (TC-M08-061) y de error (TC-M08-062).
-// QA SGPMP - Evaluacion (ronda 1). Prueba de componente con Vitest + jsdom.
+// | Fecha      | Nombre                   | Que se hizo |
+// |------------|--------------------------|-------------|
+// | 2026-11-19 | Juan Sebastian Gutierrez | v1 ronda 1 |
+// | 2026-11-22 | Juan Sebastian Gutierrez | v1.1 reintento 1 (INC-M08-384-G025, GitHub 705): CP-03 sin role=alert en el esperado ni en la medicion (decision de Sebastian, opcion A: RF-107 Tipo 1 no define el rol; el rol medido pasa a OBS-rol); OBS-CA01 y OBS-alcance reescritas; OBS-cierre-detalle y OBS-sin-costo nuevas. Los demas checkpoints, esperados y fuentes quedan literales |
+// QA SGPMP - Evaluacion (ronda 1; reintento 1 con v1.1). Prueba de componente con Vitest + jsdom.
 //
 // Que se ejecuta de verdad (codigo de src/, sin modificarlo):
-//   - Exito de REGISTRO_ACTIVO: useActivos().registrar -> activosApi -> http -> avisarExito -> ToastHost/Alert.
+//   - Exito de REGISTRO_ACTIVO: useActivos().registrar -> activosApi -> http -> pushToast (plantilla 8.5) -> ToastHost/Alert.
 //   - Exito de CIERRE_PERIODO: CierreView completo (ProveedorPeriodo, prevalidacion, modal de confirmacion,
 //     POST del cierre) -> pushToast -> ToastHost/Alert.
 //   - Errores: cargarCatalogoErrores (catalogo de M09) -> reportesApi.generar -> http (interceptor que llama
-//     mapToApiError) -> la linea literal de HistorialPredictivoView.tsx:114 -> ToastHost/Alert.
+//     mapToApiError) -> la linea literal de HistorialPredictivoView.tsx:190 -> ToastHost/Alert.
 // La red se simula con el adaptador del mismo cliente `http` que usa la app. No se llama a TEST.
 //
 // Reporte: JSON propio en STAGING_DIR (resultado_TC-M08-G025[_reintentoN].json). Cada checkpoint arranca en
@@ -51,7 +55,7 @@ const CPS: Checkpoint[] = [
     esperado: 'Banner de exito con el texto "El periodo [periodo] fue cerrado correctamente. 120 activos fueron revaluados." (N = activos_procesados de la respuesta del cierre)',
     fuente: 'RF-107 seccion 8.5 (EXITOSO, plantilla fija CIERRE_PERIODO); CA-09' },
   { paso: 'CP-03', caso: 'TC-M08-061',
-    esperado: 'El aviso de exito es un banner verde (variante success) con icono de check y role=alert',
+    esperado: 'El aviso de exito es un banner verde (variante success) con icono de check (sin role=alert: decision de Sebastian del 2026-11-22, opcion A; RF-107 Tipo 1 no define el rol; ver OBS-rol)',
     fuente: 'RF-107 Tipo 1 (Apariencia)' },
   { paso: 'CP-04', caso: 'TC-M08-061 (valor limite)',
     esperado: 'Visible a los 4,999 s y oculto a los 5,000 s',
@@ -168,7 +172,7 @@ function Anfitrion() {
   );
 }
 
-/** Mismo manejo de error que HistorialPredictivoView.tsx:114 (la linea se verifica literal en beforeAll). */
+/** Mismo manejo de error que HistorialPredictivoView.tsx:190 (la linea se verifica literal en beforeAll). */
 async function exportarComoHistorialPredictivo(): Promise<void> {
   try {
     await reportesApi.generar('REPORTE_HISTORICO_SANITARIO', 'PDF',
@@ -326,6 +330,7 @@ describe('TC-M08-061 Mensaje de exito (RF-107 Tipo 1)', () => {
     const esperado = `El período ${nombre} fue cerrado correctamente. 120 activos fueron revaluados.`;
     const ok = exitos.length === 1 && texto.includes(esperado);
     anotar('CP-02', ok, `${exitos.length} banner(s) de exito; texto: "${texto}" (periodo mostrado por la app: "${nombre}"; activos_procesados=120; comprobantes=3)`);
+    observaciones.push(`OBS-cierre-detalle: despues de la plantilla de la 8.5 el aviso del cierre agrega un detalle (CierreView.tsx, TC-DIS-294: «N/Total activos procesados» y comprobantes). Texto medido: "${texto}". La 8.5 da solo la plantilla; CP-02 exige que la contenga.`);
     expect(ok, `${texto} | esperado: ${esperado}`).toBe(true);
   });
 
@@ -338,8 +343,9 @@ describe('TC-M08-061 Mensaje de exito (RF-107 Tipo 1)', () => {
     const clase = a?.getAttribute('class') ?? '(sin banner)';
     const icono = a ? claseIcono(a) : '(sin banner)';
     const rol = a?.getAttribute('role') ?? '(sin banner)';
-    const ok = !!a && clase.split(' ').includes('ds-alert--success') && /check/i.test(icono) && rol === 'alert';
-    anotar('CP-03', ok, `clase="${clase}"; icono="${icono}"; role="${rol}"`);
+    const ok = !!a && clase.split(' ').includes('ds-alert--success') && /check/i.test(icono);
+    anotar('CP-03', ok, `clase="${clase}"; icono="${icono}"; role="${rol}" (no cuenta, ver OBS-rol)`);
+    observaciones.push(`OBS-rol (decision de Sebastian del 2026-11-22, opcion A): el aviso de exito tiene role="${rol}". La ronda 1 exigia role=alert sin fuente en el RF-107 (Tipo 1 solo pide banner verde con icono de check; RNF-05 pide WCAG 2.1 AA). El cambio a role="status" viene de A11Y2-M08 TC-DIS-292 (Alert.tsx:71, commit bd1b0f5f); el error sigue con role=alert.`);
     expect(ok).toBe(true);
   });
 
@@ -530,11 +536,31 @@ describe('Observaciones de TC-M08-062 (no son checkpoints)', () => {
     expect(true).toBe(true);
   });
 
+  it('OBS-sin-costo registro sin costo_adquisicion (origen distinto de compra)', async () => {
+    let texto = '(no medido)';
+    try {
+      vi.useFakeTimers({ now: new Date('2026-11-19T22:00:00-05:00') });
+      render(<Anfitrion />);
+      simular('POST', /^\/activos-biologicos$/, 201,
+        { ...RESPUESTA_REGISTRO('BOV-2024-003', 9003), origen_financiero: 'NACIMIENTO', detalles_procedencia: 'Nacimiento en finca', costo_adquisicion: null });
+      const { result } = renderHook(() => useActivos());
+      await act(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await result.current.registrar({ ...DTO_REGISTRO('BOV-2024-003'), origen_financiero: 'NACIMIENTO', costo_adquisicion: null } as any);
+      });
+      texto = avisos('success').map(textoAviso).join(' | ') || '(sin banner de exito)';
+    } catch (e) {
+      texto = `no medido (${(e as Error).message})`;
+    }
+    observaciones.push(`OBS-sin-costo: con costo_adquisicion null (origen NACIMIENTO) el aviso fue "${texto}". La 8.5 no define el «valor inicial reconocido» cuando el origen no es compra (pendiente de Analisis desde la ronda 1).`);
+    expect(true).toBe(true);
+  });
+
   it('OBS-fijas observaciones de alcance', () => {
     observaciones.push('OBS-FA5 (TC-M08-061 e, exito con advertencias): las Entradas vigentes del RF-107 no tienen un campo para advertencias y la seccion 8.5 no tiene esa rama; FA-5 solo aparece en la Descripcion. No se prueba.');
-    observaciones.push('OBS-CA01 y posicion: el tiempo de aparicion (<= 500 ms) y la posicion "en la parte superior" no se pueden medir en jsdom. El tiempo se cubre en TC-M08-073 (G030).');
+    observaciones.push('OBS-CA01 y posicion: el tiempo de aparicion (<= 500 ms) no se mide en jsdom; se cubre en TC-M08-073 (G030). La posicion "en la parte superior" se mide en navegador real en TC-M08-G026 (CP-22, OK en su reintento 1).');
     observaciones.push('OBS-FA2 (decision de QA): por indicacion del evaluador se sigue el criterio de Desarrollo (v7: el catalogo tiene prioridad sobre el texto del servidor; fuera del catalogo se muestra el texto del servidor). La seccion 8.5 y FA-2 del RF-107 piden el mensaje generico para una clave no catalogada; queda como diferencia documentada con la especificacion.');
-    observaciones.push('OBS-alcance: el error al registrar un activo se muestra dentro del formulario y no en el banner de M08; hoy solo HistorialPredictivoView y ReportesPage usan el banner de error con boton. Las pruebas de error usan el manejo de HistorialPredictivoView.tsx:114.');
+    observaciones.push('OBS-alcance: el error al registrar un activo se muestra dentro del formulario y no en el banner de M08; hoy solo HistorialPredictivoView y ReportesPage usan el banner de error con boton (revisado en HEAD f10009d5). Las pruebas de error usan el manejo de HistorialPredictivoView.tsx:190.');
     expect(true).toBe(true);
   });
 });

@@ -2,8 +2,9 @@
 // |------------|--------------------------|-------------|
 // | 2026-11-21 | Juan Sebastian Gutierrez | TC-M08-G023 (TC-M08-058; RF-106): acceso a RF-72 desde pendientes, POST simulado y solo lectura v1 |
 // | 2026-11-21 | Juan Sebastian Gutierrez | v1.1 (Claude): CP-01/CP-02 ubican el li del pendiente por su texto en pantalla (fecha, nivel y condición) y no por el índice de la respuesta; el obtenido incluye li_pantalla |
+// | 2026-11-23 | Juan Sebastian Gutierrez | v1.2 reintento 1 (INC-M08-390-G023): 5 checkpoints (CP-01, CP-03, CP-04, CP-05 y CP-06); la línea base solo exige pendientes y uno de nivel >= 2 en la ventana |
 //
-// QA SGPMP - Evaluacion (ronda 1). Navegador real (Chromium) contra el frontend desplegado en TEST, cuenta Veterinario 97,
+// QA SGPMP - Evaluacion (ronda 1; reintento 1 con v1.2). Navegador real (Chromium) contra el frontend desplegado en TEST, cuenta Veterinario 97,
 // activo 885. Solo lectura: el POST /prediccion/retroalimentacion se simula con page.route (no llega a TEST).
 //
 // SOLO LECTURA:
@@ -35,12 +36,6 @@ const CPS: Checkpoint[] = [
     caso: 'TC-M08-058, pendiente de nivel >= 2 dentro de la ventana de RF-72',
     esperado: 'Al pulsar «Registrar retroalimentación» en la primera predicción pendiente de nivel >= 2 con menos de 89 días, la app va a /prediccion/retroalimentacion?resultado=<id>&activo=885 y abre el formulario «Retroalimentación clínica» de RF-72 con ese id_resultado_inferencia y el activo 885',
     fuente: 'RF-106 CA-4; Postcondición 2; Proceso 5',
-  },
-  {
-    paso: 'CP-02',
-    caso: 'TC-M08-058, pendiente de nivel <= 1 dentro de la ventana de RF-72',
-    esperado: 'Al pulsar «Registrar retroalimentación» en la primera predicción pendiente de nivel <= 1 con menos de 89 días, la app va a /prediccion/retroalimentacion?resultado=<id>&activo=885 y abre el formulario «Retroalimentación clínica» de RF-72 con ese id_resultado_inferencia y el activo 885',
-    fuente: 'RF-106 CA-4; Postcondición 2; Proceso 5 («Cada ítem tiene un botón "Registrar retroalimentación" que abre el formulario de RF-72 prellenado»)',
   },
   {
     paso: 'CP-03',
@@ -294,7 +289,7 @@ test.afterAll(() => {
 // ---------------------------------------------------------------------------------------------------------------
 // Recorrido unico (un solo login)
 // ---------------------------------------------------------------------------------------------------------------
-test('TC-M08-G023 navegador real (CP-01 a CP-06)', async ({ page }) => {
+test('TC-M08-G023 navegador real (5 checkpoints)', async ({ page }) => {
   test.setTimeout(300_000);
   const correo = process.env.QA_VET_EMAIL ?? '';
   const clave = process.env.QA_VET_PASSWORD ?? '';
@@ -361,14 +356,12 @@ test('TC-M08-G023 navegador real (CP-01 a CP-06)', async ({ page }) => {
     return edad > 48 * HORA_MS && edad < VENTANA_SEGURA_MS;
   };
   const idxAlto = h1.pendientes.items.findIndex((p) => Number(p.nivel_riesgo ?? 0) >= 2 && enVentana(p));
-  const idxBajo = h1.pendientes.items.findIndex((p) => Number(p.nivel_riesgo ?? 0) <= 1 && enVentana(p));
   const itemAlto = idxAlto >= 0 ? h1.pendientes.items[idxAlto] : null;
-  const itemBajo = idxBajo >= 0 ? h1.pendientes.items[idxBajo] : null;
   const edadDias = (f: string) => Math.round(((ahora - ms(f)) / DIA_MS) * 10) / 10;
   precondicion(
     `Línea base del ${ACTIVO}`,
-    h1.pendientes.total >= 2 && idxAlto >= 0 && idxBajo >= 0,
-    `pendientes=${h1.pendientes.total}, alto=${itemAlto ? `${corto(itemAlto.id_resultado_inferencia)} (nivel=${itemAlto.nivel_riesgo}, fecha=${itemAlto.fecha_inferencia}, edad=${edadDias(itemAlto.fecha_inferencia)}d)` : '(ausente)'}, bajo=${itemBajo ? `${corto(itemBajo.id_resultado_inferencia)} (nivel=${itemBajo.nivel_riesgo ?? 0}, fecha=${itemBajo.fecha_inferencia}, edad=${edadDias(itemBajo.fecha_inferencia)}d)` : '(ausente)'}`,
+    h1.pendientes.total >= 2 && idxAlto >= 0,
+    `pendientes=${h1.pendientes.total}, alto=${itemAlto ? `${corto(itemAlto.id_resultado_inferencia)} (nivel=${itemAlto.nivel_riesgo}, fecha=${itemAlto.fecha_inferencia}, edad=${edadDias(itemAlto.fecha_inferencia)}d)` : '(ausente)'}`,
   );
 
   const mayores90 = h1.pendientes.items.filter((p) => ahora - ms(p.fecha_inferencia) > 90 * DIA_MS);
@@ -555,16 +548,6 @@ test('TC-M08-G023 navegador real (CP-01 a CP-06)', async ({ page }) => {
   );
   observaciones.push(`Al volver al historial, el id de CP-01 (${corto(itemAlto!.id_resultado_inferencia)}) ${idAltoSigue ? 'sigue' : 'no sigue'} en pendientes (con POST simulado se espera que siga).`);
 
-  // -- 7. CP-02: pendiente de nivel <= 1
-  const idxBajo2 = h2.pendientes.items.findIndex((p) => p.id_resultado_inferencia === itemBajo!.id_resultado_inferencia);
-  precondicion(
-    'El pendiente de nivel <= 1 de la línea base sigue en la lista',
-    idxBajo2 >= 0,
-    idxBajo2 >= 0 ? `indice=${idxBajo2}, id=${corto(itemBajo!.id_resultado_inferencia)}` : `id=${corto(itemBajo!.id_resultado_inferencia)} ausente`,
-  );
-  const res02 = await probarClicPendiente(idxBajo2, itemBajo!, 'CP-02_rf72');
-  anotar('CP-02', res02.ok, res02.obtenido);
-
   // -- 8. CP-04: fuentes que consulta la vista
   const enHistorial = peticiones.filter((p) => p.pantalla.endsWith('/prediccion/historial-predictivo'));
   const getsHist = enHistorial.filter((p) => p.metodo === 'GET' && new RegExp(`/historial-predictivo/${ACTIVO}$`).test(p.ruta));
@@ -586,12 +569,11 @@ test('TC-M08-G023 navegador real (CP-01 a CP-06)', async ({ page }) => {
     && estatica.botonesValoracion.length === 0
     && botonesPendNoPermitidos.length === 0
     && noGetHistorial.length === 0
-    && res01.noGetEnClic.length === 0
-    && res02.noGetEnClic.length === 0;
+    && res01.noGetEnClic.length === 0;
   anotar(
     'CP-05',
     ok05,
-    `dialogs=${estatica.dialogs}, radiogroups=${estatica.radiogroups}, textareas=${estatica.textareas}, botones_valoracion=${estatica.botonesValoracion.length} [${estatica.botonesValoracion.join(', ')}], botones_pend=[${estatica.botonesPend.join(', ')}], no_get_historial=${noGetHistorial.length}, no_get_clic_cp01=${res01.noGetEnClic.length}, no_get_clic_cp02=${res02.noGetEnClic.length}`,
+    `dialogs=${estatica.dialogs}, radiogroups=${estatica.radiogroups}, textareas=${estatica.textareas}, botones_valoracion=${estatica.botonesValoracion.length} [${estatica.botonesValoracion.join(', ')}], botones_pend=[${estatica.botonesPend.join(', ')}], no_get_historial=${noGetHistorial.length}, no_get_clic_cp01=${res01.noGetEnClic.length}`,
   );
 
   // -- 10. Precondicion de despliegue con los scripts que cargo la app

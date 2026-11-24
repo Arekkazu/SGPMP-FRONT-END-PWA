@@ -1,0 +1,58 @@
+// Controles por mutacion del reintento 1 de TC-M08-G031 (prueba de la herramienta; no es parte de la corrida oficial).
+// Uso: QA_MUTACION=<nombre> pnpm exec vitest run <spec> --config <este archivo>. Reemplazo exacto en memoria (nunca en src\),
+// con CRLF normalizado, guarda «aparece 1 vez» y una linea [QA_MUTACION] por reemplazo aplicado.
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { mergeConfig, type Plugin } from 'vite';
+import base from '../../../../../../vite.config';
+
+const AQUI = dirname(fileURLToPath(import.meta.url));
+const RAIZ = resolve(AQUI, '../../../../../..');
+
+type Mut = { archivo: string; viejo: string; nuevo: string };
+const MUTACIONES: Record<string, Mut[]> = {
+  fecha_local: [{ archivo: 'src/shared/design-system/EstadoSincronizacion.tsx',
+    viejo: 'return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;',
+    nuevo: "return d.toLocaleString('es-CO');" }],
+  acciones_texto: [{ archivo: 'src/shared/design-system/EstadoSincronizacion.tsx',
+    viejo: `<Button variant="secondary" size="sm" onClick={() => irA(m.clave)}>{t('sincronizacion.resolver')}</Button>`,
+    nuevo: `<span>{t('sincronizacion.resolver')}</span>` }],
+  sin_tiempo: [{ archivo: 'src/shared/design-system/EstadoSincronizacion.tsx',
+    viejo: "t('sincronizacion.offline_desde', { fecha: fechaSync(desde), count: minutosSinRed })",
+    nuevo: "t('sincronizacion.descripcion.OFFLINE')" }],
+  cola_incompleta: [{ archivo: 'src/shared/design-system/EstadoSincronizacion.tsx',
+    viejo: '{enCola(verCola).map((op) =>', nuevo: '{enCola(verCola).slice(0, 1).map((op) =>' }],
+  sin_lista_cache: [{ archivo: 'src/shared/design-system/EstadoSincronizacion.tsx',
+    viejo: '>{conCache.length', nuevo: '>{false && conCache.length' }],
+  conflicto_sin_detalle: [{ archivo: 'src/shared/design-system/EstadoSincronizacion.tsx',
+    viejo: '{conflictos.length > 0 && (', nuevo: '{false && conflictos.length > 0 && (' }],
+  sin_offline: [{ archivo: 'src/shared/hooks/useOnlineStatus.ts',
+    viejo: 'const handleOffline = () => setOnline(false);', nuevo: 'const handleOffline = () => undefined;' }],
+  conflicto_oculto: [{ archivo: 'src/shared/sync/estadoSincronizacion.ts',
+    viejo: ": modulos.some((m) => m.conflictos) ? 'CONFLICTO'", nuevo: ": false ? 'CONFLICTO'" }],
+};
+
+function mutacion(): Plugin {
+  const nombre = process.env.QA_MUTACION ?? '';
+  const lista = MUTACIONES[nombre];
+  if (!lista) throw new Error(`QA_MUTACION desconocida: "${nombre}"`);
+  return {
+    name: 'qa-g031-r1-mutacion',
+    enforce: 'pre',
+    transform(code, id) {
+      const ruta = id.replace(/\\/g, '/').split('?')[0];
+      const aplicables = lista.filter((m) => ruta.endsWith(m.archivo));
+      if (!aplicables.length) return null;
+      let c = code.replace(/\r\n/g, '\n');
+      for (const m of aplicables) {
+        const veces = c.split(m.viejo).length - 1;
+        if (veces !== 1) throw new Error(`[QA_MUTACION] ${nombre}: el texto viejo aparece ${veces} veces en ${m.archivo}`);
+        c = c.replace(m.viejo, m.nuevo);
+        console.log(`[QA_MUTACION] ${nombre} aplicado en ${m.archivo}`);
+      }
+      return { code: c, map: null };
+    },
+  };
+}
+
+export default mergeConfig(base, { root: RAIZ, plugins: [mutacion()] });

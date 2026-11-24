@@ -1,0 +1,16 @@
+3c3
+< // Uso: node servidor_api_simulada.mjs.txt <dir_build> <escenario: normal|backend_tvco|backend_orden> <puerto>
+---
+> // Uso: node servidor_api_simulada.mjs.txt <dir_build> <escenario: normal|backend_tvco|backend_orden|backend_evaluables> <puerto>
+83a84,94
+>   // Reintento 2 (control backend_evaluables): reproduce el filtro del backend que fallo en el reintento 1 (commit 655bc00af,
+>   // evaluables(): nivel >= 2 que cambia respecto de la anterior, o con alerta), para comprobar que CP-12 da FALLA.
+>   if (escenario === 'backend_evaluables') {
+>     const evaluables = new Set(); let anterior = null;
+>     for (const p of [...preds].sort((a, b) => ms(a.fecha) - ms(b.fecha))) {
+>       const n = p.datos.nivel_riesgo;
+>       if ((n !== null && n >= 2 && n !== anterior) || p.datos.tiene_alerta_generada) evaluables.add(p.datos.id_resultado_inferencia);
+>       anterior = n;
+>     }
+>     pend = pend.filter((p) => evaluables.has(p.datos.id_resultado_inferencia));
+>   }

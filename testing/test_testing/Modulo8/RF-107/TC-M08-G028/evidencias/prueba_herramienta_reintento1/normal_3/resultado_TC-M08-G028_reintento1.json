@@ -1,0 +1,153 @@
+{
+  "tc": "TC-M08-G028",
+  "reintento": 1,
+  "run_id": "prueba-normal_3",
+  "fecha": "2026-11-23T10:52:26.663Z",
+  "summary": {
+    "total": 12,
+    "ok": 12,
+    "falla": 0,
+    "veredicto": "Aprobado"
+  },
+  "checkpoints": [
+    {
+      "paso": "CP-01",
+      "esperado": "Baja: al llegar a «Confirma la baja» hay 1 diálogo y 0 POST de baja; «Volver» y luego «Cancelar» cierran sin POST (0); repetir el flujo y «Confirmar baja» => exactamente 1 POST de baja",
+      "fuente": "RF-107 8.1; Restricciones; CA-03",
+      "obtenido": "en_confirmacion={dialogos=1, post=0}; tras_volver_y_cancelar={dialogos=0, post=0}; tras_confirmar={post=1}",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-02",
+      "esperado": "Reversión: al pulsar «Revertir reconocimiento» hay 1 diálogo y 0 POST; «Cancelar» => diálogo cerrado y 0 POST; reabrir, motivo, confirmar => 1 POST de reversión",
+      "fuente": "RF-107 8.1; CA-03",
+      "obtenido": "en_confirmacion={dialogos=1, post=0}; tras_cancelar={dialogos=0, post=0}; tras_confirmar={post=1}",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-03",
+      "esperado": "Cierre: «Cerrar período» => 1 diálogo y 0 POST de cierre; «Cancelar» => 0; reabrir y confirmar => 1 POST",
+      "fuente": "RF-107 8.1; CA-03",
+      "obtenido": "en_confirmacion={dialogos=1, post=0}; tras_cancelar={dialogos=0, post=0}; tras_confirmar={post=1}",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-04",
+      "esperado": "Revocación: «Revocar QA Cliente G028» => 1 diálogo y 0 POST; «Cancelar» => 0; reabrir, motivo, confirmar => 1 POST",
+      "fuente": "RF-107 8.1; CA-03",
+      "obtenido": "en_confirmacion={dialogos=1, post=0}; tras_cancelar={dialogos=0, post=0}; tras_confirmar={post=1}",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-05",
+      "esperado": "Acción no crítica: «Exportar en PDF» => 0 diálogos en todo momento y exactamente 1 POST /reportes",
+      "fuente": "RF-107 8.1 («requiere_confirmacion = false: no muestra ningún modal»)",
+      "obtenido": "boton_exportar=presente; dialogos=[antes=0, inmediato=0, despues=0]; post_reportes=1",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-06",
+      "esperado": "El diálogo del cierre contiene el nombre del período tal como lo muestra la app (nombrePeriodo: «Octubre de 2026»)",
+      "fuente": "RF-107 8.5 (CIERRE_PERIODO: «el período a cerrar»)",
+      "obtenido": "esperado=\"Octubre de 2026\"; texto=\"¿Cerrar el período Octubre de 2026?Vas a cerrar Octubre de 2026 · Finca QA · NIT 900123456. El período queda inmutable: los hechos con fecha de este período que lleguen después se registran en el siguiente.Se cerrará Octubre de 2026: la acción es irreversible.CancelarCerrar período\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-08",
+      "esperado": "El diálogo del cierre advierte que no podrá reabrirse ni modificarse: el texto cumple /(reabr|irreversible)/i Y /(modific|inmutable)/i",
+      "fuente": "RF-107 8.5",
+      "obtenido": "patrones={reabr_o_irreversible=\"irreversible\", modific_o_inmutable=\"inmutable\"}; texto=\"¿Cerrar el período Octubre de 2026?Vas a cerrar Octubre de 2026 · Finca QA · NIT 900123456. El período queda inmutable: los hechos con fecha de este período que lleguen después se registran en el siguiente.Se cerrará Octubre de 2026: la acción es irreversible.CancelarCerrar período\"",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-09",
+      "esperado": "Reversión y revocación: el texto del diálogo (título + descripción) nombra lo afectado («BOV-QA-G028-R» en la reversión; «QA Cliente G028» en la revocación) Y advierte la irreversibilidad /(irreversible|no se puede deshacer|definitiv)/i. Exige 2 diálogos evaluados",
+      "fuente": "RF-107 8.5 («para las demás acciones críticas: qué datos serán afectados, qué cambio es irreversible»)",
+      "obtenido": "evaluados=2/2; reversion={texto=\"Revertir el reconocimiento inicial de BOV-QA-G028-R | La reversión del reconocimiento de BOV-QA-G028-R es definitiva: no se puede deshacer. Genera el asiento espejo y solo es posible si el activo no tiene mediciones ni costos posteriores.\", nombra=sí, irreversible=sí}; revocacion={texto=\"Revocar | La revocación de QA Cliente G028 es definitiva: no se puede deshacer.\", nombra=sí, irreversible=sí}",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-10",
+      "esperado": "Escape (fireEvent.keyDown(document, {key:'Escape'})) con el diálogo de confirmación abierto de la reversión, el cierre y la revocación: los 3 siguen abiertos y 0 POST",
+      "fuente": "RF-107 Restricciones («no tiene cierre por tecla Escape»); 8.5; CA-05",
+      "obtenido": "reversion: sigue abierto, post=0; cierre: sigue abierto, post=0; revocacion: sigue abierto, post=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-11",
+      "esperado": "Clic en el fondo del diálogo (fireEvent.click sobre el propio [role=\"dialog\"]) en los 4 diálogos (la baja en su paso «Confirma la baja»): los 4 siguen abiertos y 0 POST",
+      "fuente": "RF-107 Restricciones; CA-05",
+      "obtenido": "baja: sigue abierto, post=0; reversion: sigue abierto, post=0; cierre: sigue abierto, post=0; revocacion: sigue abierto, post=0",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-12",
+      "esperado": "Ninguno de los 4 diálogos (la baja en «Confirma la baja») tiene el botón X (acciones.cerrar)",
+      "fuente": "RF-107 8.5 («dos botones»); CA-05; v7",
+      "obtenido": "baja: boton_X=ausente; reversion: boton_X=ausente; cierre: boton_X=ausente; revocacion: boton_X=ausente",
+      "estado": "OK"
+    },
+    {
+      "paso": "CP-13",
+      "esperado": "Con cada uno de los 4 diálogos abiertos (la baja en «Confirma la baja»), avanzar 600.000 ms: siguen abiertos y 0 POST",
+      "fuente": "RF-107 8.5 («No tiene ningún temporizador de cierre automático»)",
+      "obtenido": "baja: tras_600000ms=sigue abierto, post=0; reversion: tras_600000ms=sigue abierto, post=0; cierre: tras_600000ms=sigue abierto, post=0; revocacion: tras_600000ms=sigue abierto, post=0",
+      "estado": "OK"
+    }
+  ],
+  "observaciones": [
+    "OBS-1: referencias en src\\ a requiere_confirmacion=0, nivel_criticidad_accion=0.",
+    "OBS-2: título e ícono de advertencia (svg o .ds-alert--warning) — baja: titulo=\"Registrar baja\", icono_advertencia=sí; reversion: titulo=\"Revertir el reconocimiento inicial de BOV-QA-G028-R\", icono_advertencia=no; cierre: titulo=\"¿Cerrar el período Octubre de 2026?\", icono_advertencia=no; revocacion: titulo=\"Revocar\", icono_advertencia=no. El Tipo 5 de la Descripción (versión anterior) pide «¿Confirmas esta acción?» con ícono.",
+    "OBS-3: textos de botones en paso de confirmación — baja: [\"Volver\", \"Confirmar baja\"]; reversion: [\"Cancelar\", \"Revertir reconocimiento\"]; cierre: [\"Cancelar\", \"Cerrar período\"]; revocacion: [\"Cancelar\", \"Revocar\"]. La 8.5 dice «Confirmar» y «Cancelar». Decisión del evaluador: observación.",
+    "OBS-4: la baja contiene \"BOV-QA-G028\"=no (texto=\"Registrar bajaRegistro de baja La baja de un activo individual es total. La baja es definitiva y no se puede deshacer.Confirma la bajaTipo de bajaMuerteFecha de baja2026-11-23Motivo de la bajaBaja de prueba QA G028VolverConfirmar baja\"). Decisión del evaluador: observación.",
+    "OBS-5: en la baja, cancelar desde «Confirma la baja» exige pulsar «Volver» y luego «Cancelar».",
+    "OBS-6: Escape en «Confirma la baja»: sigue abierto, 0 POST. Es el defecto 2 de INC-M08-384-G025, corregido por Desarrollo en b370f754 (#723: useModalA11y lee la opción escape de un ref); se reverifica aquí y no cuenta en este caso."
+  ],
+  "retirados": [
+    {
+      "paso": "068 (b) configurar requiere_confirmacion=false",
+      "motivo": "el campo no existe en el frontend; las confirmaciones están fijas en cada vista"
+    },
+    {
+      "paso": "068 (d) contradicción nivel_criticidad_accion/requiere_confirmacion y advertencia en log",
+      "motivo": "los campos no existen y no hay log en el frontend"
+    }
+  ],
+  "precondiciones": [
+    {
+      "nombre": "P1 ModalShell.tsx contiene useModalA11y(onClose, { escape: !bloqueante }) y {!bloqueante && (",
+      "ok": true,
+      "detalle": "encontrado"
+    },
+    {
+      "nombre": "P2 RegistrarBajaModal.tsx contiene bloqueante={pendiente !== null}",
+      "ok": true,
+      "detalle": "encontrado"
+    },
+    {
+      "nombre": "P3 DetalleActivoModal.tsx contiene min={20} max={2000} peligro bloqueante",
+      "ok": true,
+      "detalle": "encontrado"
+    },
+    {
+      "nombre": "P4 CierreView.tsx contiene <ModalShell bloqueante title={t('cierre.confirmar_titulo'",
+      "ok": true,
+      "detalle": "encontrado"
+    },
+    {
+      "nombre": "P5 ClientesView.tsx contiene bloqueante={estado.accion === 'revocar'}",
+      "ok": true,
+      "detalle": "encontrado"
+    },
+    {
+      "nombre": "P6 Reloj simulado avanza Date.now() con vi.advanceTimersByTimeAsync",
+      "ok": true,
+      "detalle": "delta=100 ms"
+    },
+    {
+      "nombre": "P7 Sin operación en curso heredada al empezar cada prueba (operacionEnCurso() = null)",
+      "ok": true,
+      "detalle": "ninguna"
+    }
+  ]
+}
